@@ -39,6 +39,11 @@ def score(request: ScoreRequest) -> list[CapturedEvent]:
 
 
 # Serve frontend static files in production
-frontend_dist = os.path.join(os.path.dirname(__file__), "..", "..", "frontend", "dist")
-if os.path.isdir(frontend_dist):
-    app.mount("/", StaticFiles(directory=frontend_dist, html=True), name="frontend")
+# Works both locally (backend/../frontend/dist) and in Docker (/app/frontend/dist)
+for candidate in [
+    os.path.join(os.path.dirname(__file__), "..", "..", "frontend", "dist"),
+    os.path.join(os.getcwd(), "frontend", "dist"),
+]:
+    if os.path.isdir(candidate):
+        app.mount("/", StaticFiles(directory=candidate, html=True), name="frontend")
+        break
