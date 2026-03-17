@@ -1,0 +1,149 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+html, body {
+  margin: 0;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  overflow: hidden;
+  height: 100%;
+}
+
+#root {
+  height: 100%;
+  overflow: hidden;
+}
+
+/* Phone frame */
+.phone-frame {
+  width: 300px;
+  height: 600px;
+  border-radius: 36px;
+  border: 3px solid #d1d5db;
+  background: #ffffff;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.12);
+}
+
+.phone-notch {
+  width: 120px;
+  height: 24px;
+  background: #111827;
+  border-radius: 0 0 16px 16px;
+  margin: 0 auto;
+  position: relative;
+  z-index: 10;
+}
+
+.phone-status-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 4px 20px;
+  font-size: 11px;
+  color: #6b7280;
+  background: #f9fafb;
+}
+
+/* Chat bubbles */
+.chat-bubble-user {
+  background: #3b82f6;
+  color: white;
+  border-radius: 18px 18px 4px 18px;
+  padding: 10px 14px;
+  max-width: 85%;
+  margin-left: auto;
+  font-size: 14px;
+  line-height: 1.4;
+}
+
+.chat-bubble-ai {
+  background: #f3f4f6;
+  color: #1f2937;
+  border-radius: 18px 18px 18px 4px;
+  padding: 10px 14px;
+  max-width: 85%;
+  font-size: 14px;
+  line-height: 1.4;
+}
+
+/* Event cards */
+.event-card {
+  border-left: 3px solid transparent;
+  transition: all 0.15s ease;
+}
+
+.event-card:hover {
+  background: rgba(0, 0, 0, 0.02);
+}
+
+.event-card[data-type="user-message"] {
+  border-left-color: #3b82f6;
+}
+
+.event-card[data-type="ai-response"] {
+  border-left-color: #10b981;
+}
+
+.event-card[data-type="session-end"] {
+  border-left-color: #8b5cf6;
+}
+
+.event-card[data-type="score"] {
+  border-left-color: #f59e0b;
+}
+
+/* Scrollbar styling */
+::-webkit-scrollbar {
+  width: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #d1d5db;
+  border-radius: 3px;
+}
+
+/* Keep dark scrollbar in code editor */
+.bg-gray-950 ::-webkit-scrollbar-thumb {
+  background: #374151;
+}
+
+/* New event animation */
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.event-new {
+  animation: slideIn 0.3s ease-out;
+}
+
+/* Typing indicator */
+@keyframes blink {
+  0%, 100% { opacity: 0.3; }
+  50% { opacity: 1; }
+}
+
+.typing-dot {
+  animation: blink 1.4s infinite;
+}
+
+.typing-dot:nth-child(2) {
+  animation-delay: 0.2s;
+}
+
+.typing-dot:nth-child(3) {
+  animation-delay: 0.4s;
+}

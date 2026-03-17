@@ -1,0 +1,56 @@
+import { StepConfig, ChatMessage, ChatResponse, CapturedEvent } from '../types';
+
+const API_BASE = import.meta.env.VITE_API_URL || '';
+
+export async function sendChat(
+  message: string,
+  history: ChatMessage[],
+  config: StepConfig,
+  sessionId: string | null,
+  amplitudeApiKey: string | null,
+): Promise<ChatResponse> {
+  const res = await fetch(`${API_BASE}/api/chat`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      message,
+      history: history.map((m) => ({ role: m.role, content: m.content })),
+      config,
+      session_id: sessionId,
+      amplitude_api_key: amplitudeApiKey,
+    }),
+  });
+
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({ detail: 'Request failed' }));
+    throw new Error(err.detail || `HTTP ${res.status}`);
+  }
+
+  return res.json();
+}
+
+export async function sendScore(
+  sessionId: string,
+  messageId: string,
+  thumbsUp: boolean,
+  config: StepConfig,
+  amplitudeApiKey: string | null,
+): Promise<CapturedEvent[]> {
+  const res = await fetch(`${API_BASE}/api/score`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      session_id: sessionId,
+      message_id: messageId,
+      thumbs_up: thumbsUp,
+      config,
+      amplitude_api_key: amplitudeApiKey,
+    }),
+  });
+
+  if (!res.ok) {
+    throw new Error(`Score request failed: ${res.status}`);
+  }
+
+  return res.json();
+}
