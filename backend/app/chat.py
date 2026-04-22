@@ -80,6 +80,7 @@ def handle_chat(request: ChatRequest) -> ChatResponse:
         with agent.session(
             user_id=user_id,
             session_id=session_id if config.step_3_sessions else None,
+            track_session_end=False,
         ) as session:
             session.track_user_message(request.message)
 
@@ -91,7 +92,6 @@ def handle_chat(request: ChatRequest) -> ChatResponse:
                 temperature=0.7,
             )
             latency_ms = (time.time() - start_time) * 1000
-        # Session End is auto-fired here when the `with` block exits
     else:
         start_time = time.time()
         response = plain_client.chat.completions.create(
