@@ -90,6 +90,7 @@ def handle_chat(request: ChatRequest) -> ChatResponse:
                 messages=messages,
                 max_tokens=500,
                 temperature=0.7,
+                amplitude_user_id=user_id,
             )
             latency_ms = (time.time() - start_time) * 1000
     else:
