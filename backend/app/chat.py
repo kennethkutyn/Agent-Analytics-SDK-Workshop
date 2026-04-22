@@ -15,6 +15,7 @@ from .event_capture import (
     build_user_message_event,
     build_ai_response_event,
     build_score_event,
+    send_events_to_amplitude,
 )
 
 client = OpenAI(api_key=OPENAI_API_KEY)
@@ -98,6 +99,10 @@ def handle_chat(request: ChatRequest) -> ChatResponse:
             )
         )
 
+    # Forward events to Amplitude if an API key was provided
+    if request.amplitude_api_key:
+        send_events_to_amplitude(events, request.amplitude_api_key)
+
     return ChatResponse(
         response=ai_content,
         events=events,
@@ -120,4 +125,10 @@ def handle_score(request: ScoreRequest) -> list[CapturedEvent]:
         user_id=user_id,
         session_id=request.session_id if request.config.step_3_sessions else None,
     )
-    return [event]
+    events = [event]
+
+    # Forward events to Amplitude if an API key was provided
+    if request.amplitude_api_key:
+        send_events_to_amplitude(events, request.amplitude_api_key)
+
+    return events

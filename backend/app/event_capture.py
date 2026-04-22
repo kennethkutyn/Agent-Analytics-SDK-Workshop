@@ -6,9 +6,41 @@ The event schema matches the documented amplitude-ai event format exactly, so wh
 real SDK ships, we can swap in `on_event_callback` capture with minimal changes.
 """
 
+import logging
 import time
 import uuid
+
+from amplitude import Amplitude, BaseEvent
+
 from .models import CapturedEvent
+
+logger = logging.getLogger(__name__)
+
+# Cache Amplitude client instances per API key to reuse connections
+_amplitude_clients: dict[str, Amplitude] = {}
+
+
+def _get_amplitude_client(api_key: str) -> Amplitude:
+    if api_key not in _amplitude_clients:
+        client = Amplitude(api_key)
+        _amplitude_clients[api_key] = client
+    return _amplitude_clients[api_key]
+
+
+def send_events_to_amplitude(events: list[CapturedEvent], api_key: str) -> None:
+    """Forward captured events to Amplitude using the official SDK."""
+    if not api_key or not events:
+        return
+    client = _get_amplitude_client(api_key)
+    for event in events:
+        amp_event = BaseEvent(
+            event_type=event.event_type,
+            user_id=event.user_id or "anonymous",
+            event_properties=event.properties,
+            time=event.timestamp,
+        )
+        client.track(amp_event)
+    client.flush()
 
 
 def generate_message_id() -> str:
