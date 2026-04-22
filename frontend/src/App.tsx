@@ -10,7 +10,7 @@ export default function App() {
   const [code, setCode] = useState(CODE_TEMPLATE);
   const [events, setEvents] = useState<CapturedEvent[]>([]);
   const [sessionId, setSessionId] = useState<string | null>(null);
-  const [amplitudeApiKey, setAmplitudeApiKey] = useState<string | null>(null);
+  const [amplitudeApiKey, setAmplitudeApiKey] = useState<string | null>('3a86fb958f9731bcf8c070b7ea1bd87f');
 
   const config: StepConfig = parseStepConfig(code);
 
