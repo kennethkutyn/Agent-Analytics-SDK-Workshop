@@ -99,9 +99,31 @@ def handle_chat(request: ChatRequest) -> ChatResponse:
             )
         )
 
-    # Forward events to Amplitude if an API key was provided
+    # Forward events to Amplitude using the real SDK tracking functions
     if request.amplitude_api_key:
-        send_events_to_amplitude(events, request.amplitude_api_key)
+        send_events_to_amplitude(
+            events,
+            request.amplitude_api_key,
+            user_id=user_id,
+            session_id=session_id if config.step_3_sessions else None,
+            trace_id=trace_id,
+            agent_id=agent_id,
+            system_prompt=SYSTEM_PROMPT if config.step_3_sessions else None,
+            model=response.model or OPENAI_MODEL,
+            provider="openai",
+            latency_ms=latency_ms,
+            input_tokens=input_tokens,
+            output_tokens=output_tokens,
+            cost_usd=cost_usd,
+            temperature=0.7,
+            is_streaming=False,
+            turn_id_user=1 if config.step_3_sessions else None,
+            turn_id_ai=2 if config.step_3_sessions else None,
+            message_id_user=user_msg_id,
+            message_id_ai=ai_msg_id,
+            message_content_user=request.message,
+            message_content_ai=ai_content,
+        )
 
     return ChatResponse(
         response=ai_content,
@@ -127,8 +149,17 @@ def handle_score(request: ScoreRequest) -> list[CapturedEvent]:
     )
     events = [event]
 
-    # Forward events to Amplitude if an API key was provided
+    # Forward events to Amplitude using the real SDK tracking functions
     if request.amplitude_api_key:
-        send_events_to_amplitude(events, request.amplitude_api_key)
+        send_events_to_amplitude(
+            events,
+            request.amplitude_api_key,
+            user_id=user_id,
+            session_id=request.session_id if request.config.step_3_sessions else None,
+            score_name="helpful",
+            score_value=1.0 if request.thumbs_up else 0.0,
+            score_target_id=request.message_id,
+            score_source="user",
+        )
 
     return events
