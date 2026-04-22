@@ -7,8 +7,7 @@ import uuid
 from openai import OpenAI
 
 from amplitude import Amplitude
-from amplitude_ai import OpenAI as AmplitudeOpenAI
-from amplitude_ai.core.tracking import track_score
+from amplitude_ai import AmplitudeAI, OpenAI as AmplitudeOpenAI
 
 from .config import OPENAI_API_KEY, OPENAI_MODEL
 from .system_prompt import SYSTEM_PROMPT
@@ -24,28 +23,22 @@ from .event_capture import (
 # Plain OpenAI client (no tracking) used when step_1 is off
 plain_client = OpenAI(api_key=OPENAI_API_KEY)
 
-# Cache instrumented clients per Amplitude API key
-_instrumented_clients: dict[str, AmplitudeOpenAI] = {}
+# Cache fully-instrumented SDK stacks per Amplitude API key
+_sdk_stacks: dict[str, dict] = {}
 
 
-def _get_instrumented_client(amplitude_api_key: str) -> AmplitudeOpenAI:
-    if amplitude_api_key not in _instrumented_clients:
-        amp = Amplitude(amplitude_api_key)
-        _instrumented_clients[amplitude_api_key] = AmplitudeOpenAI(
-            amplitude=amp,
-            api_key=OPENAI_API_KEY,
-        )
-    return _instrumented_clients[amplitude_api_key]
-
-
-# Cache Amplitude clients for score tracking
-_amplitude_clients: dict[str, Amplitude] = {}
-
-
-def _get_amplitude_client(api_key: str) -> Amplitude:
-    if api_key not in _amplitude_clients:
-        _amplitude_clients[api_key] = Amplitude(api_key)
-    return _amplitude_clients[api_key]
+def _get_sdk_stack(amplitude_api_key: str) -> dict:
+    """Return cached {ai, openai, agent} for this API key."""
+    if amplitude_api_key not in _sdk_stacks:
+        ai = AmplitudeAI(amplitude=Amplitude(amplitude_api_key))
+        openai_client = AmplitudeOpenAI(amplitude=ai, api_key=OPENAI_API_KEY)
+        agent = ai.agent("amplimoney-chatbot")
+        _sdk_stacks[amplitude_api_key] = {
+            "ai": ai,
+            "openai": openai_client,
+            "agent": agent,
+        }
+    return _sdk_stacks[amplitude_api_key]
 
 
 # Cost estimates per 1M tokens for gpt-4o-mini
@@ -77,21 +70,28 @@ def handle_chat(request: ChatRequest) -> ChatResponse:
     user_msg_id = generate_message_id()
     ai_msg_id = generate_message_id()
 
-    # Decide whether to use the instrumented client (real SDK tracking)
+    # Use the full SDK instrumentation (agent + session + provider wrapper)
     use_sdk = config.step_1_ai_sdk and request.amplitude_api_key and user_id
     if use_sdk:
-        instrumented = _get_instrumented_client(request.amplitude_api_key)
-        start_time = time.time()
-        response = instrumented.chat.completions.create(
-            model=OPENAI_MODEL,
-            messages=messages,
-            max_tokens=500,
-            temperature=0.7,
-            amplitude_user_id=user_id,
-            amplitude_conversation_id=session_id if config.step_3_sessions else None,
-            amplitude_trace_id=trace_id,
-        )
-        latency_ms = (time.time() - start_time) * 1000
+        stack = _get_sdk_stack(request.amplitude_api_key)
+        instrumented = stack["openai"]
+        agent = stack["agent"]
+
+        with agent.session(
+            user_id=user_id,
+            session_id=session_id if config.step_3_sessions else None,
+        ) as session:
+            session.track_user_message(request.message)
+
+            start_time = time.time()
+            response = instrumented.chat.completions.create(
+                model=OPENAI_MODEL,
+                messages=messages,
+                max_tokens=500,
+                temperature=0.7,
+            )
+            latency_ms = (time.time() - start_time) * 1000
+        # Session End is auto-fired here when the `with` block exits
     else:
         start_time = time.time()
         response = plain_client.chat.completions.create(
@@ -163,18 +163,21 @@ def handle_score(request: ScoreRequest) -> list[CapturedEvent]:
     )
     events = [event]
 
-    # Send score via SDK
+    # Send score via SDK session
     if request.amplitude_api_key and user_id:
-        amp = _get_amplitude_client(request.amplitude_api_key)
-        track_score(
-            amplitude=amp,
+        stack = _get_sdk_stack(request.amplitude_api_key)
+        agent = stack["agent"]
+
+        with agent.session(
             user_id=user_id,
-            name="helpful",
-            value=1.0 if request.thumbs_up else 0.0,
-            target_id=request.message_id,
-            source="user",
             session_id=request.session_id if request.config.step_3_sessions else None,
-        )
-        amp.flush()
+            track_session_end=False,  # Don't fire Session End for a score-only call
+        ) as session:
+            session.score(
+                name="helpful",
+                value=1.0 if request.thumbs_up else 0.0,
+                target_id=request.message_id,
+                source="user",
+            )
 
     return events
