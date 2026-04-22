@@ -6,6 +6,10 @@ import time
 import uuid
 from openai import OpenAI
 
+from amplitude import Amplitude
+from amplitude_ai import OpenAI as AmplitudeOpenAI
+from amplitude_ai.core.tracking import track_score
+
 from .config import OPENAI_API_KEY, OPENAI_MODEL
 from .system_prompt import SYSTEM_PROMPT
 from .models import ChatRequest, ChatResponse, CapturedEvent, ScoreRequest
@@ -15,10 +19,34 @@ from .event_capture import (
     build_user_message_event,
     build_ai_response_event,
     build_score_event,
-    send_events_to_amplitude,
 )
 
-client = OpenAI(api_key=OPENAI_API_KEY)
+# Plain OpenAI client (no tracking) used when step_1 is off
+plain_client = OpenAI(api_key=OPENAI_API_KEY)
+
+# Cache instrumented clients per Amplitude API key
+_instrumented_clients: dict[str, AmplitudeOpenAI] = {}
+
+
+def _get_instrumented_client(amplitude_api_key: str) -> AmplitudeOpenAI:
+    if amplitude_api_key not in _instrumented_clients:
+        amp = Amplitude(amplitude_api_key)
+        _instrumented_clients[amplitude_api_key] = AmplitudeOpenAI(
+            amplitude=amp,
+            api_key=OPENAI_API_KEY,
+        )
+    return _instrumented_clients[amplitude_api_key]
+
+
+# Cache Amplitude clients for score tracking
+_amplitude_clients: dict[str, Amplitude] = {}
+
+
+def _get_amplitude_client(api_key: str) -> Amplitude:
+    if api_key not in _amplitude_clients:
+        _amplitude_clients[api_key] = Amplitude(api_key)
+    return _amplitude_clients[api_key]
+
 
 # Cost estimates per 1M tokens for gpt-4o-mini
 COST_PER_INPUT_TOKEN = 0.15 / 1_000_000
@@ -49,7 +77,37 @@ def handle_chat(request: ChatRequest) -> ChatResponse:
     user_msg_id = generate_message_id()
     ai_msg_id = generate_message_id()
 
-    # --- Exercise 1+: Build user message event ---
+    # Decide whether to use the instrumented client (real SDK tracking)
+    use_sdk = config.step_1_ai_sdk and request.amplitude_api_key and user_id
+    if use_sdk:
+        instrumented = _get_instrumented_client(request.amplitude_api_key)
+        start_time = time.time()
+        response = instrumented.chat.completions.create(
+            model=OPENAI_MODEL,
+            messages=messages,
+            max_tokens=500,
+            temperature=0.7,
+            amplitude_user_id=user_id,
+            amplitude_conversation_id=session_id if config.step_3_sessions else None,
+            amplitude_trace_id=trace_id,
+        )
+        latency_ms = (time.time() - start_time) * 1000
+    else:
+        start_time = time.time()
+        response = plain_client.chat.completions.create(
+            model=OPENAI_MODEL,
+            messages=messages,
+            max_tokens=500,
+            temperature=0.7,
+        )
+        latency_ms = (time.time() - start_time) * 1000
+
+    ai_content = response.choices[0].message.content or ""
+    input_tokens = response.usage.prompt_tokens if response.usage else 0
+    output_tokens = response.usage.completion_tokens if response.usage else 0
+    cost_usd = (input_tokens * COST_PER_INPUT_TOKEN) + (output_tokens * COST_PER_OUTPUT_TOKEN)
+
+    # Build events for frontend display regardless of SDK tracking
     if config.step_1_ai_sdk:
         events.append(
             build_user_message_event(
@@ -62,24 +120,6 @@ def handle_chat(request: ChatRequest) -> ChatResponse:
                 message_id=user_msg_id,
             )
         )
-
-    # --- Make the actual OpenAI call ---
-    start_time = time.time()
-    response = client.chat.completions.create(
-        model=OPENAI_MODEL,
-        messages=messages,
-        max_tokens=500,
-        temperature=0.7,
-    )
-    latency_ms = (time.time() - start_time) * 1000
-
-    ai_content = response.choices[0].message.content or ""
-    input_tokens = response.usage.prompt_tokens if response.usage else 0
-    output_tokens = response.usage.completion_tokens if response.usage else 0
-    cost_usd = (input_tokens * COST_PER_INPUT_TOKEN) + (output_tokens * COST_PER_OUTPUT_TOKEN)
-
-    # --- Exercise 1+: Build AI response event ---
-    if config.step_1_ai_sdk:
         events.append(
             build_ai_response_event(
                 content=ai_content,
@@ -97,32 +137,6 @@ def handle_chat(request: ChatRequest) -> ChatResponse:
                 message_id=ai_msg_id,
                 system_prompt=SYSTEM_PROMPT if config.step_3_sessions else None,
             )
-        )
-
-    # Forward events to Amplitude using the real SDK tracking functions
-    if request.amplitude_api_key:
-        send_events_to_amplitude(
-            events,
-            request.amplitude_api_key,
-            user_id=user_id,
-            session_id=session_id if config.step_3_sessions else None,
-            trace_id=trace_id,
-            agent_id=agent_id,
-            system_prompt=SYSTEM_PROMPT if config.step_3_sessions else None,
-            model=response.model or OPENAI_MODEL,
-            provider="openai",
-            latency_ms=latency_ms,
-            input_tokens=input_tokens,
-            output_tokens=output_tokens,
-            cost_usd=cost_usd,
-            temperature=0.7,
-            is_streaming=False,
-            turn_id_user=1 if config.step_3_sessions else None,
-            turn_id_ai=2 if config.step_3_sessions else None,
-            message_id_user=user_msg_id,
-            message_id_ai=ai_msg_id,
-            message_content_user=request.message,
-            message_content_ai=ai_content,
         )
 
     return ChatResponse(
@@ -149,17 +163,18 @@ def handle_score(request: ScoreRequest) -> list[CapturedEvent]:
     )
     events = [event]
 
-    # Forward events to Amplitude using the real SDK tracking functions
-    if request.amplitude_api_key:
-        send_events_to_amplitude(
-            events,
-            request.amplitude_api_key,
+    # Send score via SDK
+    if request.amplitude_api_key and user_id:
+        amp = _get_amplitude_client(request.amplitude_api_key)
+        track_score(
+            amplitude=amp,
             user_id=user_id,
+            name="helpful",
+            value=1.0 if request.thumbs_up else 0.0,
+            target_id=request.message_id,
+            source="user",
             session_id=request.session_id if request.config.step_3_sessions else None,
-            score_name="helpful",
-            score_value=1.0 if request.thumbs_up else 0.0,
-            score_target_id=request.message_id,
-            score_source="user",
         )
+        amp.flush()
 
     return events

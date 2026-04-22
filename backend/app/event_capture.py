@@ -1,21 +1,15 @@
 """
 Event capture module.
 
-Uses the amplitude_ai SDK to track events with the correct [Agent] event schema.
-Also builds CapturedEvent objects with matching property names for frontend display.
+Builds CapturedEvent objects with the correct [Agent] event schema for frontend display.
+Actual tracking to Amplitude is handled by the amplitude_ai SDK's instrumented OpenAI
+client in chat.py.
 """
 
-import logging
 import time
 import uuid
 
-from amplitude import Amplitude
-
 from amplitude_ai.core.tracking import (
-    track_user_message,
-    track_ai_message,
-    track_session_end,
-    track_score,
     EVENT_USER_MESSAGE,
     EVENT_AI_RESPONSE,
     EVENT_SESSION_END,
@@ -52,106 +46,6 @@ from amplitude_ai.core.tracking import (
 )
 
 from .models import CapturedEvent
-
-logger = logging.getLogger(__name__)
-
-# Cache Amplitude client instances per API key to reuse connections
-_amplitude_clients: dict[str, Amplitude] = {}
-
-
-def _get_amplitude_client(api_key: str) -> Amplitude:
-    if api_key not in _amplitude_clients:
-        client = Amplitude(api_key)
-        _amplitude_clients[api_key] = client
-    return _amplitude_clients[api_key]
-
-
-def send_events_to_amplitude(
-    events: list[CapturedEvent],
-    api_key: str,
-    *,
-    user_id: str | None = None,
-    session_id: str | None = None,
-    trace_id: str | None = None,
-    agent_id: str | None = None,
-    system_prompt: str | None = None,
-    model: str | None = None,
-    provider: str | None = None,
-    latency_ms: float | None = None,
-    input_tokens: int | None = None,
-    output_tokens: int | None = None,
-    cost_usd: float | None = None,
-    temperature: float | None = None,
-    is_streaming: bool | None = None,
-    turn_id_user: int | None = None,
-    turn_id_ai: int | None = None,
-    message_id_user: str | None = None,
-    message_id_ai: str | None = None,
-    message_content_user: str | None = None,
-    message_content_ai: str | None = None,
-    score_name: str | None = None,
-    score_value: float | None = None,
-    score_target_id: str | None = None,
-    score_source: str | None = None,
-) -> None:
-    """Forward events to Amplitude using the amplitude_ai SDK tracking functions."""
-    if not api_key or not events:
-        return
-    client = _get_amplitude_client(api_key)
-    resolved_user_id = user_id or "anonymous"
-
-    for event in events:
-        if event.event_type == EVENT_USER_MESSAGE and message_content_user:
-            track_user_message(
-                amplitude=client,
-                user_id=resolved_user_id,
-                message_content=message_content_user,
-                session_id=session_id,
-                trace_id=trace_id,
-                turn_id=turn_id_user or 1,
-                message_id=message_id_user,
-                agent_id=agent_id,
-            )
-        elif event.event_type == EVENT_AI_RESPONSE and message_content_ai and model and provider:
-            track_ai_message(
-                amplitude=client,
-                user_id=resolved_user_id,
-                model_name=model,
-                provider=provider,
-                response_content=message_content_ai,
-                latency_ms=latency_ms or 0,
-                session_id=session_id,
-                trace_id=trace_id,
-                turn_id=turn_id_ai or 2,
-                message_id=message_id_ai,
-                input_tokens=input_tokens,
-                output_tokens=output_tokens,
-                total_cost_usd=cost_usd,
-                system_prompt=system_prompt,
-                temperature=temperature,
-                is_streaming=is_streaming,
-                agent_id=agent_id,
-            )
-        elif event.event_type == EVENT_SESSION_END:
-            track_session_end(
-                amplitude=client,
-                user_id=resolved_user_id,
-                session_id=session_id or "",
-                agent_id=agent_id,
-            )
-        elif event.event_type == EVENT_SCORE and score_name and score_target_id:
-            track_score(
-                amplitude=client,
-                user_id=resolved_user_id,
-                name=score_name,
-                value=score_value or 0.0,
-                target_id=score_target_id,
-                source=score_source or "user",
-                session_id=session_id,
-                agent_id=agent_id,
-            )
-
-    client.flush()
 
 
 def generate_message_id() -> str:
