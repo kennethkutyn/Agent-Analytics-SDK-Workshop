@@ -57,7 +57,8 @@ function EventSummary({ event }: { event: CapturedEvent }) {
     return <span className="text-gray-500">{parts.join(' · ')}</span>;
   }
   if (event.event_type.includes('User Message')) {
-    const content = String(props['[GenAI] Content'] || '').slice(0, 60);
+    const content = String(props['$llm_message'] || '').slice(0, 60);
+    if (!content) return null;
     return <span className="text-gray-500 truncate">"{content}"</span>;
   }
   if (event.event_type.includes('Score')) {
