@@ -82,8 +82,6 @@ def handle_chat(request: ChatRequest) -> ChatResponse:
             session_id=session_id if config.step_3_sessions else None,
             track_session_end=False,
         ) as session:
-            session.track_user_message(request.message)
-
             start_time = time.time()
             response = instrumented.chat.completions.create(
                 model=OPENAI_MODEL,
