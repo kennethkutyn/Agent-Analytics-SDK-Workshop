@@ -8,7 +8,7 @@ interface ChatPanelProps {
   onSessionId: (id: string) => void;
   onEvents: (events: CapturedEvent[]) => void;
   amplitudeApiKey: string | null;
-  judgePrompt: string | null;
+  onMessagesChange?: (messages: ChatMessageType[]) => void;
 }
 
 export default function ChatPanel({
@@ -17,12 +17,20 @@ export default function ChatPanel({
   onSessionId,
   onEvents,
   amplitudeApiKey,
-  judgePrompt,
+  onMessagesChange,
 }: ChatPanelProps) {
-  const [messages, setMessages] = useState<ChatMessageType[]>([]);
+  const [messages, setMessagesState] = useState<ChatMessageType[]>([]);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
+
+  const setMessages = (updater: ChatMessageType[] | ((prev: ChatMessageType[]) => ChatMessageType[])) => {
+    setMessagesState((prev) => {
+      const next = typeof updater === 'function' ? updater(prev) : updater;
+      onMessagesChange?.(next);
+      return next;
+    });
+  };
 
   useEffect(() => {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: 'smooth' });
@@ -38,7 +46,7 @@ export default function ChatPanel({
     setLoading(true);
 
     try {
-      const res = await sendChat(text, messages, config, sessionId, amplitudeApiKey, judgePrompt);
+      const res = await sendChat(text, messages, config, sessionId, amplitudeApiKey);
       const aiMsg: ChatMessageType = {
         role: 'assistant',
         content: res.response,

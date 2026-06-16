@@ -16,7 +16,7 @@ const stepLabels: { key: keyof StepConfig; label: string; num: number; group?: s
   { key: 'step_3_sessions', label: 'Sessions', num: 3, group: 'sdk' },
   { key: 'step_4_scoring', label: 'Scoring', num: 4, group: 'sdk' },
   { key: 'step_5_code_eval', label: 'Code Eval', num: 5, group: 'eval' },
-  { key: 'step_6_llm_judge', label: 'LLM Judge', num: 6, group: 'eval' },
+  { key: 'step_6_llm_judge', label: 'Eval Builder', num: 6, group: 'eval' },
 ];
 
 export default function CodeEditor({ code, onChange, config, onReset }: CodeEditorProps) {

@@ -21,7 +21,6 @@ class ChatRequest(BaseModel):
     config: StepConfig = Field(default_factory=StepConfig)
     session_id: str | None = None
     amplitude_api_key: str | None = None
-    judge_prompt: str | None = None
 
 
 class CapturedEvent(BaseModel):
@@ -44,3 +43,21 @@ class ScoreRequest(BaseModel):
     thumbs_up: bool
     config: StepConfig = Field(default_factory=StepConfig)
     amplitude_api_key: str | None = None
+
+
+class SessionTranscript(BaseModel):
+    messages: list[ChatMessage]
+
+
+class EvalBatchRequest(BaseModel):
+    prompt: str
+    sessions: list[SessionTranscript]
+
+
+class EvalResult(BaseModel):
+    passed: bool
+    rationale: str
+
+
+class EvalBatchResponse(BaseModel):
+    results: list[EvalResult]
