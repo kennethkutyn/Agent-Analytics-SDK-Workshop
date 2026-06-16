@@ -18,7 +18,7 @@ _judge_client: OpenAI | None = None
 def _get_judge_client() -> OpenAI:
     global _judge_client
     if _judge_client is None:
-        _judge_client = OpenAI(api_key=OPENAI_API_KEY)
+        _judge_client = OpenAI(api_key=OPENAI_API_KEY, max_retries=5, timeout=30.0)
     return _judge_client
 
 REFUSAL_PATTERNS = [

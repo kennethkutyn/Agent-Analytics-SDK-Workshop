@@ -23,7 +23,8 @@ from .event_capture import (
 from .evals import run_code_eval
 
 # Plain OpenAI client (no tracking) used when step_1 is off
-plain_client = OpenAI(api_key=OPENAI_API_KEY)
+# max_retries handles 429 rate-limit bursts from concurrent workshop users
+plain_client = OpenAI(api_key=OPENAI_API_KEY, max_retries=5, timeout=30.0)
 
 # Cache fully-instrumented SDK stacks per Amplitude API key
 _sdk_stacks: dict[str, dict] = {}
@@ -33,7 +34,7 @@ def _get_sdk_stack(amplitude_api_key: str) -> dict:
     """Return cached {ai, openai, agent} for this API key."""
     if amplitude_api_key not in _sdk_stacks:
         ai = AmplitudeAI(amplitude=Amplitude(amplitude_api_key))
-        openai_client = AmplitudeOpenAI(amplitude=ai, api_key=OPENAI_API_KEY)
+        openai_client = AmplitudeOpenAI(amplitude=ai, api_key=OPENAI_API_KEY, max_retries=5, timeout=30.0)
         agent = ai.agent("amplimoney-chatbot")
         _sdk_stacks[amplitude_api_key] = {
             "ai": ai,

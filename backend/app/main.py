@@ -2,6 +2,8 @@ from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 import os
+import time
+import random
 
 from .config import ALLOWED_ORIGINS, OPENAI_API_KEY
 from .models import (
@@ -34,6 +36,8 @@ def health():
 def chat(request: ChatRequest):
     if not OPENAI_API_KEY:
         raise HTTPException(status_code=500, detail="OpenAI API key not configured")
+    # Jitter to spread bursts when everyone clicks at once
+    time.sleep(random.uniform(0, 0.5))
     try:
         return handle_chat(request)
     except HTTPException:
@@ -51,13 +55,14 @@ def score(request: ScoreRequest) -> list[CapturedEvent]:
 def eval_batch(request: EvalBatchRequest):
     if not OPENAI_API_KEY:
         raise HTTPException(status_code=500, detail="OpenAI API key not configured")
+    # Jitter to spread bursts when everyone clicks "Run Eval" at once
+    time.sleep(random.uniform(0, 1.0))
     try:
         results = []
         for session in request.sessions:
             msgs = [{"role": m.role, "content": m.content} for m in session.messages]
             result = run_session_eval(msgs, request.prompt)
             results.append(EvalResult(**result))
-        return EvalBatchResponse(results=results)
     except HTTPException:
         raise
     except Exception as e:
