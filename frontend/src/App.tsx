@@ -6,11 +6,18 @@ import { CODE_TEMPLATE } from './lib/codeTemplate';
 import { parseStepConfig } from './lib/parseSteps';
 import { CapturedEvent, StepConfig } from './types';
 
+const DEFAULT_JUDGE_PROMPT =
+  'Did the agent complete the user\'s request? ' +
+  'User asked: {user_message} ' +
+  'Agent responded: {ai_response} ' +
+  'Answer PASS or FAIL and explain in one sentence.';
+
 export default function App() {
   const [code, setCode] = useState(CODE_TEMPLATE);
   const [events, setEvents] = useState<CapturedEvent[]>([]);
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [amplitudeApiKey, setAmplitudeApiKey] = useState<string | null>('3a86fb958f9731bcf8c070b7ea1bd87f');
+  const [judgePrompt, setJudgePrompt] = useState(DEFAULT_JUDGE_PROMPT);
 
   const config: StepConfig = parseStepConfig(code);
 
@@ -56,6 +63,7 @@ export default function App() {
           onSessionId={setSessionId}
           onEvents={handleNewEvents}
           amplitudeApiKey={amplitudeApiKey}
+          judgePrompt={judgePrompt}
         />
         <CodeEditor
           code={code}
@@ -69,6 +77,8 @@ export default function App() {
           onClear={handleClearEvents}
           amplitudeApiKey={amplitudeApiKey}
           onAmplitudeApiKeyChange={setAmplitudeApiKey}
+          judgePrompt={judgePrompt}
+          onJudgePromptChange={setJudgePrompt}
         />
       </div>
     </div>

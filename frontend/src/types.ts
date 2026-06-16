@@ -3,6 +3,8 @@ export interface StepConfig {
   step_2_user_identity: boolean;
   step_3_sessions: boolean;
   step_4_scoring: boolean;
+  step_5_code_eval: boolean;
+  step_6_llm_judge: boolean;
 }
 
 export interface ChatMessage {

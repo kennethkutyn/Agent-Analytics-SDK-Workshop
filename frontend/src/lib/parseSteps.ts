@@ -11,6 +11,8 @@ export function parseStepConfig(code: string): StepConfig {
     step_2_user_identity: isBlockUncommented(code, 'STEP 2'),
     step_3_sessions: isBlockUncommented(code, 'STEP 3'),
     step_4_scoring: isBlockUncommented(code, 'STEP 4'),
+    step_5_code_eval: isBlockUncommented(code, 'STEP 5'),
+    step_6_llm_judge: isBlockUncommented(code, 'STEP 6'),
   };
 }
 
@@ -39,7 +41,7 @@ function isBlockUncommented(code: string, stepMarker: string): boolean {
     // Skip empty lines and description-only comment lines
     if (trimmed === '' || trimmed === '#') return false;
     // Skip lines that are clearly descriptions (start with "# " followed by text that isn't code)
-    if (trimmed.match(/^#\s+(Uncomment|That's|Now|Build|measure|Links|Every|session)/i))
+    if (trimmed.match(/^#\s+(Uncomment|That's|Now|Build|measure|Links|Every|session|Deterministic|Edit|Runs|Compare|Free|Live|Uses)/i))
       return false;
     return true;
   });

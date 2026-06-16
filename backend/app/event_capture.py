@@ -171,6 +171,36 @@ def build_session_end_event(
     )
 
 
+def build_eval_event(
+    eval_type: str,
+    passed: bool,
+    reason: str,
+    target_id: str,
+    user_id: str | None = None,
+    session_id: str | None = None,
+) -> CapturedEvent:
+    source = "code" if eval_type == "code" else "llm_judge"
+    props = {
+        PROP_SCORE_NAME: f"eval_{eval_type}",
+        PROP_SCORE_VALUE: 1.0 if passed else 0.0,
+        PROP_TARGET_ID: target_id,
+        PROP_TARGET_TYPE: "message",
+        PROP_EVALUATION_SOURCE: source,
+        PROP_SDK_VERSION: SDK_VERSION,
+        PROP_RUNTIME: "python",
+        "eval_reason": reason,
+    }
+    if session_id:
+        props[PROP_SESSION_ID] = session_id
+
+    return CapturedEvent(
+        event_type=EVENT_SCORE,
+        user_id=user_id,
+        timestamp=int(time.time() * 1000),
+        properties=props,
+    )
+
+
 def build_score_event(
     name: str,
     value: float,

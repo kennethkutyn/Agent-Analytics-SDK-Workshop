@@ -6,6 +6,8 @@ class StepConfig(BaseModel):
     step_2_user_identity: bool = False
     step_3_sessions: bool = False
     step_4_scoring: bool = False
+    step_5_code_eval: bool = False
+    step_6_llm_judge: bool = False
 
 
 class ChatMessage(BaseModel):
@@ -19,6 +21,7 @@ class ChatRequest(BaseModel):
     config: StepConfig = Field(default_factory=StepConfig)
     session_id: str | None = None
     amplitude_api_key: str | None = None
+    judge_prompt: str | None = None
 
 
 class CapturedEvent(BaseModel):

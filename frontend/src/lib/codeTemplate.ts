@@ -72,4 +72,39 @@ def handle_message(user_message):
 # Build cohorts of users with low scores,
 # measure quality trends over time!
 # ----------------------------------------------
+
+
+# ------ STEP 5: Add code-based eval ------
+# Deterministic quality checks — fast and free:
+#
+# if len(response) < 20:
+#     score(name="eval_code", value=0.0, source="code")
+# if re.search(r"i can't|as an ai", response, re.I):
+#     score(name="eval_code", value=0.0, source="code")
+# else:
+#     score(name="eval_code", value=1.0, source="code")
+#
+# Runs on every response, zero LLM cost!
+# Compare against user scores to measure TPR/TNR
+# ----------------------------------------------
+
+
+# ------ STEP 6: Add LLM-as-Judge eval ------
+# Live LLM call to judge response quality:
+#
+# judge_prompt = (
+#     "Did the agent complete the user's request? "
+#     "User asked: {user_message} "
+#     "Agent responded: {ai_response} "
+#     "Answer PASS or FAIL and explain in one sentence."
+# )
+# verdict = openai.chat.completions.create(
+#     model="gpt-4o-mini",
+#     messages=[{"role": "user", "content": judge_prompt}],
+# )
+# score(name="eval_llm", value=1.0 if "PASS" in verdict else 0.0, source="llm_judge")
+#
+# Edit the prompt below to improve accuracy!
+# Uses ~100 tokens per eval (~$0.0001)
+# ----------------------------------------------
 `;
