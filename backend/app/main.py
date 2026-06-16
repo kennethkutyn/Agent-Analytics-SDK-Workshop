@@ -34,7 +34,12 @@ def health():
 def chat(request: ChatRequest):
     if not OPENAI_API_KEY:
         raise HTTPException(status_code=500, detail="OpenAI API key not configured")
-    return handle_chat(request)
+    try:
+        return handle_chat(request)
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e)) from e
 
 
 @app.post("/api/score")
@@ -46,12 +51,17 @@ def score(request: ScoreRequest) -> list[CapturedEvent]:
 def eval_batch(request: EvalBatchRequest):
     if not OPENAI_API_KEY:
         raise HTTPException(status_code=500, detail="OpenAI API key not configured")
-    results = []
-    for session in request.sessions:
-        msgs = [{"role": m.role, "content": m.content} for m in session.messages]
-        result = run_session_eval(msgs, request.prompt)
-        results.append(EvalResult(**result))
-    return EvalBatchResponse(results=results)
+    try:
+        results = []
+        for session in request.sessions:
+            msgs = [{"role": m.role, "content": m.content} for m in session.messages]
+            result = run_session_eval(msgs, request.prompt)
+            results.append(EvalResult(**result))
+        return EvalBatchResponse(results=results)
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e)) from e
 
 
 # Serve frontend static files in production
