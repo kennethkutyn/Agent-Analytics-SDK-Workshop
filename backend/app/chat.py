@@ -68,9 +68,10 @@ def handle_chat(request: ChatRequest) -> ChatResponse:
     agent_id = "amplimoney-chatbot" if config.step_3_sessions else None
     trace_id = f"trace-{uuid.uuid4().hex[:8]}" if config.step_3_sessions else None
 
-    # Generate message IDs
+    # Generate message IDs and compute turn number from conversation history
     user_msg_id = generate_message_id()
     ai_msg_id = generate_message_id()
+    turn_number = len(request.history) + 1
 
     # Use the full SDK instrumentation (agent + session + provider wrapper)
     use_sdk = config.step_1_ai_sdk and request.amplitude_api_key and user_id
@@ -116,7 +117,7 @@ def handle_chat(request: ChatRequest) -> ChatResponse:
                 user_id=user_id,
                 session_id=session_id if config.step_3_sessions else None,
                 trace_id=trace_id,
-                turn_id=1 if config.step_3_sessions else None,
+                turn_id=turn_number if config.step_3_sessions else None,
                 agent_id=agent_id,
                 message_id=user_msg_id,
             )
@@ -133,7 +134,7 @@ def handle_chat(request: ChatRequest) -> ChatResponse:
                 user_id=user_id,
                 session_id=session_id if config.step_3_sessions else None,
                 trace_id=trace_id,
-                turn_id=2 if config.step_3_sessions else None,
+                turn_id=turn_number + 1 if config.step_3_sessions else None,
                 agent_id=agent_id,
                 message_id=ai_msg_id,
                 system_prompt=SYSTEM_PROMPT if config.step_3_sessions else None,
