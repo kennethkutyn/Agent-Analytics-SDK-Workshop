@@ -252,10 +252,13 @@ function PromptCard({
       <div className="mb-3">
         <div className="flex items-center justify-between mb-2">
           <span className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider">Sessions</span>
-          <span className="text-[10px] text-gray-400">
-            <span className={labeledCount > 0 ? 'text-purple-600 font-semibold' : ''}>{labeledCount}</span>
-            {' '}of {totalSessions} labeled
-          </span>
+          <div className="flex items-center gap-3">
+            <span className="text-[10px] text-gray-400">
+              <span className={labeledCount > 0 ? 'text-purple-600 font-semibold' : ''}>{labeledCount}</span>
+              {' '}of {totalSessions} labeled
+            </span>
+            <span className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider">Your label</span>
+          </div>
         </div>
 
         <div className="space-y-1.5">
@@ -289,12 +292,12 @@ function PromptCard({
                       {isLive ? 'live' : 'sample'}
                     </span>
                     {evalResult && (
-                      <span className={`text-[9px] px-1.5 py-0.5 rounded border font-semibold flex-shrink-0 ${
+                      <span className={`text-[9px] px-1.5 py-0.5 rounded-sm border border-dashed font-medium flex-shrink-0 ${
                         evalResult.passed
-                          ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
-                          : 'bg-red-50 text-red-700 border-red-200'
+                          ? 'bg-indigo-50 text-indigo-700 border-indigo-300'
+                          : 'bg-orange-50 text-orange-700 border-orange-300'
                       }`}>
-                        {evalResult.passed ? '✓ PASS' : '✗ FAIL'}
+                        LLM: {evalResult.passed ? 'PASS' : 'FAIL'}
                       </span>
                     )}
                   </div>
@@ -445,8 +448,8 @@ function PromptCard({
           {/* Confusion Matrix */}
           <div className="grid grid-cols-[auto_1fr_1fr] gap-px text-[10px]">
             <div />
-            <div className="text-center text-gray-500 font-medium py-1 bg-gray-100 rounded-tl">Eval: Pass</div>
-            <div className="text-center text-gray-500 font-medium py-1 bg-gray-100 rounded-tr">Eval: Fail</div>
+            <div className="text-center text-gray-500 font-medium py-1 bg-gray-100 rounded-tl">LLM: Pass</div>
+            <div className="text-center text-gray-500 font-medium py-1 bg-gray-100 rounded-tr">LLM: Fail</div>
 
             <div className="text-gray-500 font-medium pr-2 py-1.5 flex items-center">You: Pass</div>
             <div className={`text-center py-1.5 rounded font-semibold text-sm ${
