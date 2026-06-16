@@ -100,7 +100,14 @@ export default function EvalBuilder({ chatMessages }: EvalBuilderProps) {
   }, [evalPrompts, allSessions, updatePrompt]);
 
   const addEvalPrompt = useCallback(() => {
-    setEvalPrompts((prev) => [...prev, makeEvalPrompt('', '')]);
+    setEvalPrompts((prev) => {
+      const last = prev[prev.length - 1];
+      const ep = makeEvalPrompt();
+      ep.name = '';
+      ep.prompt = '';
+      if (last) ep.labels = { ...last.labels };
+      return [...prev, ep];
+    });
   }, []);
 
   const removeEvalPrompt = useCallback((id: string) => {
@@ -212,7 +219,7 @@ function PromptCard({
             className="text-sm font-medium text-gray-700 border-none bg-transparent focus:bg-purple-50 focus:ring-1 focus:ring-purple-300 rounded px-1 py-0.5 outline-none w-40"
           />
           <span className="text-[10px] bg-purple-100 text-purple-600 px-1.5 py-0.5 rounded-full">
-            v{index + 1}
+            #{index + 1}
           </span>
         </div>
         {onRemove && (

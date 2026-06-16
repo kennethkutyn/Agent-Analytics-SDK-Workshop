@@ -10,14 +10,16 @@ Three-column UI:
 - **Middle** — Editable Python code showing the SDK integration
 - **Right** — Live event stream showing Amplitude events with expandable properties
 
-Four progressive steps. Click the step badges (or edit the code directly) to enable each one:
+Six progressive steps. Click the step badges (or edit the code directly) to enable each one:
 
 | Step | What it enables | Events you'll see |
 |------|----------------|-------------------|
-| 1. AI SDK | `amplitude_ai.patch()` — instruments all LLM calls | `[GenAI] User Message`, `[GenAI] AI Response` |
+| 1. AI SDK | `amplitude_ai.patch()` — instruments all LLM calls | `[Agent] User Message`, `[Agent] AI Response` |
 | 2. User Identity | `amplitude_user_id` — links AI events to product users | Same events, now with `user_id` |
 | 3. Sessions | `agent.session()` — groups conversations | + session IDs, trace IDs, turn IDs |
-| 4. Scoring | `s.score()` — captures user feedback | + `[GenAI] Score` (thumbs up/down buttons appear) |
+| 4. Scoring | `s.score()` — captures user feedback | + `[Agent] Score` (thumbs up/down buttons appear) |
+| 5. Code Eval | Deterministic quality checks (length, refusal patterns) | + `[Agent] Score` with `source=code` |
+| 6. Eval Builder | Session-level LLM-as-Judge evaluation | Opens the Eval Builder tab |
 
 ## Local development
 
