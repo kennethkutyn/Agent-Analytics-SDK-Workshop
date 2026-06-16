@@ -63,6 +63,7 @@ def eval_batch(request: EvalBatchRequest):
             msgs = [{"role": m.role, "content": m.content} for m in session.messages]
             result = run_session_eval(msgs, request.prompt)
             results.append(EvalResult(**result))
+        return EvalBatchResponse(results=results)
     except HTTPException:
         raise
     except Exception as e:

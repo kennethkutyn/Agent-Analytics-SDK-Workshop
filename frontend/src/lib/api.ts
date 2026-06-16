@@ -46,7 +46,12 @@ export async function runEvalBatch(
 
   if (!res.ok) {
     const err = await res.json().catch(() => ({ detail: 'Eval request failed' }));
-    throw new Error(err.detail || `HTTP ${res.status}`);
+    const detail = typeof err.detail === 'string'
+      ? err.detail
+      : Array.isArray(err.detail)
+        ? err.detail.map((d: { msg?: string }) => d.msg || JSON.stringify(d)).join('; ')
+        : `HTTP ${res.status}`;
+    throw new Error(detail);
   }
 
   return res.json();
