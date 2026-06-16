@@ -8,6 +8,7 @@ interface ChatPanelProps {
   onSessionId: (id: string) => void;
   onEvents: (events: CapturedEvent[]) => void;
   amplitudeApiKey: string | null;
+  judgePrompt: string | null;
 }
 
 export default function ChatPanel({
@@ -16,6 +17,7 @@ export default function ChatPanel({
   onSessionId,
   onEvents,
   amplitudeApiKey,
+  judgePrompt,
 }: ChatPanelProps) {
   const [messages, setMessages] = useState<ChatMessageType[]>([]);
   const [input, setInput] = useState('');
@@ -36,7 +38,7 @@ export default function ChatPanel({
     setLoading(true);
 
     try {
-      const res = await sendChat(text, messages, config, sessionId, amplitudeApiKey);
+      const res = await sendChat(text, messages, config, sessionId, amplitudeApiKey, judgePrompt);
       const aiMsg: ChatMessageType = {
         role: 'assistant',
         content: res.response,

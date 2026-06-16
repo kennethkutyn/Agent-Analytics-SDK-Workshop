@@ -8,6 +8,7 @@ export async function sendChat(
   config: StepConfig,
   sessionId: string | null,
   amplitudeApiKey: string | null,
+  judgePrompt: string | null = null,
 ): Promise<ChatResponse> {
   const res = await fetch(`${API_BASE}/api/chat`, {
     method: 'POST',
@@ -18,6 +19,7 @@ export async function sendChat(
       config,
       session_id: sessionId,
       amplitude_api_key: amplitudeApiKey,
+      judge_prompt: judgePrompt,
     }),
   });
 
