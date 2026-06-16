@@ -17,8 +17,8 @@ amplitude = Amplitude("YOUR_AMPLITUDE_API_KEY")
 # amplitude_ai.patch(amplitude=amplitude)
 #
 # That's it! Every OpenAI call now auto-tracks:
-# - [GenAI] User Message
-# - [GenAI] AI Response (with tokens, cost, latency)
+# - [Agent] User Message
+# - [Agent] AI Response (with tokens, cost, latency)
 # -------------------------------------
 
 

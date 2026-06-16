@@ -1,0 +1,1116 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Agent Evals 101 — Workshop Script</title>
+<style>
+  :root {
+    --bg: #0f1117;
+    --surface: #1a1d27;
+    --surface2: #232736;
+    --border: #2e3345;
+    --text: #e4e6ef;
+    --text2: #8b8fa7;
+    --text3: #5d6178;
+    --accent: #6366f1;
+    --accent2: #818cf8;
+    --green: #34d399;
+    --green-bg: #064e3b;
+    --amber: #fbbf24;
+    --amber-bg: #78350f;
+    --red: #f87171;
+    --red-bg: #7f1d1d;
+    --purple: #a78bfa;
+    --purple-bg: #3b1f7a;
+    --blue: #60a5fa;
+    --blue-bg: #1e3a5f;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.6;
+    padding: 0;
+  }
+
+  .header {
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    background: var(--bg);
+    border-bottom: 1px solid var(--border);
+    padding: 16px 32px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .header h1 { font-size: 18px; font-weight: 700; color: var(--text); }
+  .header .meta { font-size: 13px; color: var(--text2); }
+
+  .timeline-bar {
+    position: sticky;
+    top: 56px;
+    z-index: 99;
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 8px 32px;
+    display: flex;
+    gap: 4px;
+    overflow-x: auto;
+  }
+
+  .timeline-bar a {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 10px;
+    border-radius: 6px;
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--text2);
+    text-decoration: none;
+    white-space: nowrap;
+    transition: all 0.15s;
+  }
+
+  .timeline-bar a:hover { background: var(--surface2); color: var(--text); }
+
+  .timeline-bar .time {
+    font-size: 10px;
+    font-weight: 700;
+    font-family: 'SF Mono', 'Fira Code', monospace;
+    color: var(--text3);
+    min-width: 32px;
+  }
+
+  .container { max-width: 860px; margin: 0 auto; padding: 32px; }
+
+  .act { margin-bottom: 48px; scroll-margin-top: 110px; }
+
+  .act-header {
+    display: flex;
+    align-items: baseline;
+    gap: 12px;
+    margin-bottom: 20px;
+    padding-bottom: 12px;
+    border-bottom: 2px solid var(--border);
+  }
+
+  .act-number {
+    font-size: 11px; font-weight: 800;
+    text-transform: uppercase; letter-spacing: 1.5px; color: var(--accent2);
+  }
+
+  .act-title { font-size: 22px; font-weight: 700; }
+
+  .act-time {
+    font-size: 13px; font-weight: 600; color: var(--text3);
+    margin-left: auto; font-family: 'SF Mono', 'Fira Code', monospace;
+  }
+
+  .segment {
+    margin-bottom: 28px; padding: 20px;
+    background: var(--surface); border: 1px solid var(--border); border-radius: 10px;
+  }
+
+  .segment-header { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
+
+  .segment-time {
+    font-size: 11px; font-weight: 700;
+    font-family: 'SF Mono', 'Fira Code', monospace;
+    color: var(--accent2); background: var(--surface2);
+    padding: 2px 8px; border-radius: 4px;
+  }
+
+  .segment-title { font-size: 15px; font-weight: 700; }
+
+  .segment-presenter {
+    font-size: 11px; font-weight: 600; color: var(--text3);
+    margin-left: auto; text-transform: uppercase; letter-spacing: 0.5px;
+  }
+
+  .segment-presenter.ken { color: var(--blue); }
+  .segment-presenter.vinay { color: var(--purple); }
+  .segment-presenter.both { color: var(--green); }
+
+  .show {
+    display: inline-flex; align-items: center; gap: 5px;
+    font-size: 10px; font-weight: 700;
+    text-transform: uppercase; letter-spacing: 0.5px;
+    padding: 3px 8px; border-radius: 4px; margin-bottom: 10px;
+  }
+
+  .show-slides { background: var(--blue-bg); color: var(--blue); }
+  .show-app { background: var(--green-bg); color: var(--green); }
+  .show-demo { background: var(--purple-bg); color: var(--purple); }
+  .show-new { background: var(--amber-bg); color: var(--amber); }
+
+  .say {
+    margin: 10px 0; padding: 12px 16px;
+    background: var(--surface2); border-left: 3px solid var(--accent);
+    border-radius: 0 6px 6px 0; font-size: 14px; line-height: 1.7; color: var(--text);
+  }
+
+  .say .label {
+    font-size: 10px; font-weight: 700;
+    text-transform: uppercase; letter-spacing: 1px;
+    color: var(--accent2); display: block; margin-bottom: 4px;
+  }
+
+  .say em { color: var(--amber); font-style: normal; font-weight: 600; }
+
+  .do {
+    margin: 10px 0; padding: 10px 14px;
+    background: var(--green-bg); border-left: 3px solid var(--green);
+    border-radius: 0 6px 6px 0; font-size: 13px; color: var(--green);
+  }
+
+  .do .label {
+    font-size: 10px; font-weight: 700;
+    text-transform: uppercase; letter-spacing: 1px; display: block; margin-bottom: 2px;
+  }
+
+  .warn {
+    margin: 10px 0; padding: 10px 14px;
+    background: var(--red-bg); border-left: 3px solid var(--red);
+    border-radius: 0 6px 6px 0; font-size: 13px; color: var(--red);
+  }
+
+  .note {
+    margin: 8px 0; font-size: 12px; color: var(--text3); padding-left: 4px;
+  }
+
+  ul { margin: 8px 0; padding-left: 20px; }
+  li { font-size: 13px; margin-bottom: 4px; color: var(--text2); }
+  li strong { color: var(--text); }
+
+  .stat-grid {
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    gap: 8px; margin: 12px 0;
+  }
+
+  .stat-card {
+    background: var(--surface2); border: 1px solid var(--border);
+    border-radius: 8px; padding: 10px 14px;
+  }
+
+  .stat-card .value { font-size: 22px; font-weight: 800; color: var(--accent2); }
+  .stat-card .desc { font-size: 11px; color: var(--text3); margin-top: 2px; }
+
+  .qa-table { width: 100%; border-collapse: collapse; margin: 10px 0; font-size: 13px; }
+
+  .qa-table th {
+    text-align: left; font-weight: 700; color: var(--text3);
+    font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px;
+    padding: 8px 10px; border-bottom: 1px solid var(--border);
+  }
+
+  .qa-table td {
+    padding: 10px; border-bottom: 1px solid var(--border); vertical-align: top;
+  }
+
+  .qa-table td:first-child { color: var(--text); font-weight: 600; width: 35%; }
+  .qa-table td:last-child { color: var(--text2); }
+
+  .divider { height: 1px; background: var(--border); margin: 24px 0; }
+
+  .resources { margin-top: 8px; }
+  .resources a {
+    display: block; color: var(--accent2); font-size: 13px;
+    text-decoration: none; padding: 4px 0;
+  }
+  .resources a:hover { text-decoration: underline; }
+
+  .deck-map {
+    margin-bottom: 48px; scroll-margin-top: 110px;
+  }
+
+  .deck-map h2 {
+    font-size: 18px; font-weight: 700; margin-bottom: 16px;
+    padding-bottom: 10px; border-bottom: 2px solid var(--border);
+  }
+
+  .deck-table { width: 100%; border-collapse: collapse; font-size: 13px; margin: 12px 0; }
+
+  .deck-table th {
+    text-align: left; font-weight: 700; color: var(--text3);
+    font-size: 10px; text-transform: uppercase; letter-spacing: 0.5px;
+    padding: 6px 10px; border-bottom: 1px solid var(--border);
+  }
+
+  .deck-table td {
+    padding: 8px 10px; border-bottom: 1px solid var(--border); vertical-align: top;
+  }
+
+  .badge-keep {
+    display: inline-block; font-size: 10px; font-weight: 700;
+    padding: 2px 6px; border-radius: 3px;
+    background: var(--green-bg); color: var(--green);
+  }
+
+  .badge-new {
+    display: inline-block; font-size: 10px; font-weight: 700;
+    padding: 2px 6px; border-radius: 3px;
+    background: var(--amber-bg); color: var(--amber);
+  }
+
+  .badge-cut {
+    display: inline-block; font-size: 10px; font-weight: 700;
+    padding: 2px 6px; border-radius: 3px;
+    background: var(--surface2); color: var(--text3);
+    text-decoration: line-through;
+  }
+
+  .badge-app {
+    display: inline-block; font-size: 10px; font-weight: 700;
+    padding: 2px 6px; border-radius: 3px;
+    background: var(--purple-bg); color: var(--purple);
+  }
+
+  .checklist {
+    margin: 12px 0; padding: 0; list-style: none;
+  }
+
+  .checklist li {
+    padding: 8px 12px; margin-bottom: 4px;
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 6px; font-size: 13px; color: var(--text2);
+    display: flex; align-items: center; gap: 8px;
+  }
+
+  .checklist li::before {
+    content: '☐'; font-size: 16px; color: var(--text3);
+  }
+
+  .session-card {
+    background: var(--surface2); border: 1px solid var(--border);
+    border-radius: 8px; padding: 12px 14px; margin: 8px 0;
+  }
+
+  .session-card .session-label {
+    font-size: 11px; font-weight: 700; margin-bottom: 4px;
+  }
+
+  .session-card .session-label.good { color: var(--green); }
+  .session-card .session-label.bad { color: var(--red); }
+  .session-card .session-label.ambiguous { color: var(--amber); }
+
+  .session-card .msg {
+    font-size: 12px; color: var(--text2); margin: 2px 0;
+  }
+
+  .session-card .msg strong { color: var(--text); font-weight: 600; }
+
+  .matrix {
+    display: inline-grid; grid-template-columns: auto 1fr 1fr;
+    gap: 1px; font-size: 12px; margin: 8px 0;
+    border: 1px solid var(--border); border-radius: 6px; overflow: hidden;
+  }
+
+  .matrix .cell {
+    padding: 6px 12px; text-align: center; background: var(--surface2);
+  }
+
+  .matrix .header-cell {
+    padding: 4px 12px; text-align: center;
+    font-size: 10px; font-weight: 700; color: var(--text3);
+    background: var(--surface);
+  }
+
+  .matrix .tp { background: var(--green-bg); color: var(--green); font-weight: 700; }
+  .matrix .tn { background: var(--green-bg); color: var(--green); font-weight: 700; }
+  .matrix .fp { background: var(--red-bg); color: var(--red); font-weight: 700; }
+  .matrix .fn { background: var(--amber-bg); color: var(--amber); font-weight: 700; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>Agent Evals 101 &mdash; Presenter Script</h1>
+  <div class="meta">Maven &middot; June 16, 2026 &middot; 50 min total (40 + 10 Q&amp;A)</div>
+</div>
+
+<div class="timeline-bar">
+  <a href="#pre-show"><span class="time">&nbsp;&nbsp;&nbsp;</span> Pre-Show</a>
+  <a href="#act1"><span class="time">0:00</span> Open</a>
+  <a href="#act2"><span class="time">5:00</span> Steps 1&ndash;4</a>
+  <a href="#act3"><span class="time">13:00</span> Coverage Gap</a>
+  <a href="#act4"><span class="time">16:00</span> Code Eval</a>
+  <a href="#act5"><span class="time">21:00</span> Eval Builder</a>
+  <a href="#act6"><span class="time">31:00</span> Production</a>
+  <a href="#act7"><span class="time">37:00</span> Close</a>
+  <a href="#act8"><span class="time">40:00</span> Q&amp;A</a>
+</div>
+
+<div class="container">
+
+<!-- ═══════════════════════════════════════════════════════ -->
+<!-- PRE-SHOW CHECKLIST                                     -->
+<!-- ═══════════════════════════════════════════════════════ -->
+
+<div class="deck-map" id="pre-show">
+  <h2>Pre-Show Checklist</h2>
+  <ul class="checklist">
+    <li>Ken merged <a href="https://github.com/kennethkutyn/Agent-Analytics-SDK-Workshop/pull/8" style="color: var(--accent2);">PR #8</a> &rarr; Railway auto-deployed with Eval Builder, sample sessions, batch eval endpoint</li>
+    <li>Workshop app loads: <a href="https://agent-analytics-sdk-workshop-production.up.railway.app/" style="color: var(--accent2);">agent-analytics-sdk-workshop-production.up.railway.app</a></li>
+    <li>App test: enable all 6 steps, label a sample session, click "Run Eval", verify TPR/TNR appear</li>
+    <li>OpenAI API key has sufficient rate limits for ~200 participants (Tier 2+)</li>
+    <li>Ken's deck open with the 8 slides identified in deck map</li>
+    <li>Maven chat ready &mdash; workshop URL and blog links in clipboard</li>
+    <li>Second screen or window with this script open</li>
+  </ul>
+</div>
+
+<div class="divider"></div>
+
+<!-- ═══════════════════════════════════════════════════════ -->
+<!-- ACT 1: OPENING                                         -->
+<!-- ═══════════════════════════════════════════════════════ -->
+
+<div class="act" id="act1">
+  <div class="act-header">
+    <span class="act-number">Act 1</span>
+    <span class="act-title">Why Evals Matter</span>
+    <span class="act-time">0:00 &ndash; 5:00 &middot; 5 min</span>
+  </div>
+
+  <div class="segment">
+    <div class="segment-header">
+      <span class="segment-time">0:00</span>
+      <span class="segment-title">Welcome &amp; Bridge</span>
+      <span class="segment-presenter ken">Ken</span>
+    </div>
+    <div class="show show-slides">Deck slide 1 &mdash; Title + Agenda</div>
+    <div class="say">
+      <span class="label">Say</span>
+      Welcome to Agent Evals 101. I'm Ken, and I'm joined by Vinay &mdash; we're both on the Agent Analytics team at Amplitude.<br><br>
+      Some of you were in Sandhya and Justin's session on Agent Success Rate. They showed you <em>what</em> to measure. Today we're going to show you <em>how to build the system that measures it</em> &mdash; and you'll build a piece of it with your own hands in the next 40 minutes.
+    </div>
+  </div>
+
+  <div class="segment">
+    <div class="segment-header">
+      <span class="segment-time">1:00</span>
+      <span class="segment-title">The Problem</span>
+      <span class="segment-presenter ken">Ken</span>
+    </div>
+    <div class="show show-slides">Deck slide 2 &mdash; Why Evals?</div>
+    <div class="say">
+      <span class="label">Say</span>
+      You've shipped an AI feature. Users are talking to it. But how do you know if it's any good? Most teams start with thumbs up/down buttons and call it a day. Vinay's going to show you why that doesn't work.
+    </div>
+    <div class="note">Keep this to 30 seconds. It's the setup for Vinay's punch.</div>
+  </div>
+
+  <div class="segment">
+    <div class="segment-header">
+      <span class="segment-time">1:30</span>
+      <span class="segment-title">The Feedback Mirage</span>
+      <span class="segment-presenter vinay">Vinay</span>
+    </div>
+    <div class="show show-new">Deck slide 3 &mdash; NEW: "Explicit Feedback Is a Mirage"</div>
+    <div class="say">
+      <span class="label">Say</span>
+      At Amplitude, we analyzed <em>27,000 agent sessions</em> in one week. Want to guess how many had explicit user feedback &mdash; thumbs up, thumbs down, a comment?<br><br>
+      <em>2.3%.</em> That's it. 97.7% of sessions &mdash; the user said nothing. If you're building your quality strategy on user feedback alone, you're measuring the footnote and ignoring the book.
+    </div>
+    <div class="note">Pause here. Let the number land. 2 full seconds of silence.</div>
+  </div>
+
+  <div class="segment">
+    <div class="segment-header">
+      <span class="segment-time">3:00</span>
+      <span class="segment-title">The 3x Retention Signal</span>
+      <span class="segment-presenter vinay">Vinay</span>
+    </div>
+    <div class="show show-new">Deck slide 4 &mdash; NEW: "The 3x Retention Signal"</div>
+    <div class="say">
+      <span class="label">Say</span>
+      Here's what we found instead. For <em>new users</em>: if their first agent session is evaluated as positive AND they save the result &mdash; they retain at <em>3x the rate</em> over four weeks. 20,000 users, clear signal.<br><br>
+      For established users, eval scores were orthogonal to retention &mdash; they're coming back regardless. The first session is the entire adoption decision. And you can only know if that session was good if you have automated evals running on it.
+    </div>
+  </div>
+
+  <div class="segment">
+    <div class="segment-header">
+      <span class="segment-time">4:15</span>
+      <span class="segment-title">The Promise</span>
+      <span class="segment-presenter ken">Ken</span>
+    </div>
+    <div class="say">
+      <span class="label">Say</span>
+      So how do you build evals that actually work? Today we'll go from zero to a working eval system in four acts. You'll instrument an agent, add code-based evals, build an LLM evaluator from scratch, and measure how good your evaluator actually is &mdash; all in this app. Let's get started.
+    </div>
+    <div class="note">No slide needed &mdash; verbal transition to the app.</div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════ -->
+<!-- ACT 2: SDK STEPS 1-4 (SPEED RUN)                      -->
+<!-- ═══════════════════════════════════════════════════════ -->
+
+<div class="act" id="act2">
+  <div class="act-header">
+    <span class="act-number">Act 2</span>
+    <span class="act-title">Instrument Your Agent (Steps 1&ndash;4)</span>
+    <span class="act-time">5:00 &ndash; 13:00 &middot; 8 min</span>
+  </div>
+
+  <div class="segment">
+    <div class="segment-header">
+      <span class="segment-time">5:00</span>
+      <span class="segment-title">Open the Workshop App</span>
+      <span class="segment-presenter ken">Ken</span>
+    </div>
+    <div class="show show-app">App &mdash; share screen, no slides from here until Act 3 bridge</div>
+    <div class="do">
+      <span class="label">Do</span>
+      Share the workshop URL in chat. Open the app on your screen. Give participants 30 seconds to load it.
+    </div>
+    <div class="say">
+      <span class="label">Say</span>
+      Open this URL &mdash; you'll see a three-column layout. On the left is AmpliMoney, a GPT-4o-mini fintech chatbot. In the middle is the Python code that powers it. On the right is the live event stream &mdash; every analytics event the SDK generates will appear here in real time.<br><br>
+      We're going to work through 6 steps. The first 4 are about instrumenting the agent. The last 2 are about evaluating it. Let's start.
+    </div>
+  </div>
+
+  <div class="segment">
+    <div class="segment-header">
+      <span class="segment-time">6:00</span>
+      <span class="segment-title">Step 1: Instrument LLM Calls</span>
+      <span class="segment-presenter ken">Ken</span>
+    </div>
+    <div class="show show-app">App &mdash; click "1. AI SDK" badge</div>
+    <div class="do">
+      <span class="label">Do</span>
+      Click the "1. AI SDK" badge to enable it. Send: "What's my savings balance?"
+    </div>
+    <div class="say">
+      <span class="label">Say</span>
+      Two lines of code &mdash; <em>import amplitude_ai</em> and <em>amplitude_ai.patch()</em>. That's it. Look at the event stream: you've got a User Message and an AI Response with tokens, cost, latency. Every LLM call is now visible.
+    </div>
+    <div class="note">Point out the cost ($0.0003) and latency in the event properties.</div>
+  </div>
+
+  <div class="segment">
+    <div class="segment-header">
+      <span class="segment-time">7:30</span>
+      <span class="segment-title">Step 2: User Identity</span>
+      <span class="segment-presenter ken">Ken</span>
+    </div>
+    <div class="do"><span class="label">Do</span>Click "2. User Identity" badge. Send another message.</div>
+    <div class="say">
+      <span class="label">Say</span>
+      Now every event has a <em>user_id</em>. This is what lets you join AI events with product events &mdash; build funnels, run retention analysis, create cohorts of users whose agent sessions failed.
+    </div>
+  </div>
+
+  <div class="segment">
+    <div class="segment-header">
+      <span class="segment-time">8:30</span>
+      <span class="segment-title">Step 3: Sessions</span>
+      <span class="segment-presenter ken">Ken</span>
+    </div>
+    <div class="do"><span class="label">Do</span>Click "3. Sessions" badge. Send two messages in a row.</div>
+    <div class="say">
+      <span class="label">Say</span>
+      Conversations are now grouped into sessions with session_id, trace_id, and turn numbers. This is the unit you'll evaluate &mdash; not individual messages, but the <em>whole conversation</em>.
+    </div>
+  </div>
+
+  <div class="segment">
+    <div class="segment-header">
+      <span class="segment-time">9:30</span>
+      <span class="segment-title">Step 4: User Feedback</span>
+      <span class="segment-presenter ken">Ken</span>
+    </div>
+    <div class="do"><span class="label">Do</span>Click "4. Scoring" badge. Thumbs-up one response. Point out the Score event.</div>
+    <div class="say">
+      <span class="label">Say</span>
+      Thumbs up/down appear on each AI response. When you click one, it fires an <em>[Agent] Score</em> event with source "user". This is explicit feedback &mdash; and it's what most teams stop at.<br><br>
+      Now try this: <em>send 5 more messages. Only rate one of them.</em> Look at the event stream when you're done.
+    </div>
+    <div class="do"><span class="label">Activity &mdash; 2 min</span>Everyone: send 5 messages, rate only 1. Count how many responses have a score event vs. how many don't. Wait for the room.</div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════ -->
+<!-- ACT 3: THE COVERAGE GAP                                -->
+<!-- ═══════════════════════════════════════════════════════ -->
+
+<div class="act" id="act3">
+  <div class="act-header">
+    <span class="act-number">Act 3</span>
+    <span class="act-title">The Coverage Gap</span>
+    <span class="act-time">13:00 &ndash; 16:00 &middot; 3 min</span>
+  </div>
+
+  <div class="segment">
+    <div class="segment-header">
+      <span class="segment-time">13:00</span>
+      <span class="segment-title">Count the Silence</span>
+      <span class="segment-presenter vinay">Vinay</span>
+    </div>
+    <div class="show show-app">App &mdash; scroll event stream on your screen</div>
+    <div class="say">
+      <span class="label">Say</span>
+      Look at your event stream. You sent 5+ messages but only rated one. That's <em>80% of your responses with zero quality signal</em>. And you're in a workshop where we explicitly asked you to rate things. Imagine real users.<br><br>
+      In production at Amplitude: <em>97.7%</em> of sessions had no user feedback. The thumbs up button is a mirage. You need a system that evaluates <em>every single response</em> whether the user says anything or not.<br><br>
+      So how do you do that? There are two approaches.
+    </div>
+    <div class="note">This is the emotional hinge of the talk. The participant just experienced the problem in their own event stream. Vinay names it, then hands to Ken.</div>
+  </div>
+
+  <div class="segment">
+    <div class="segment-header">
+      <span class="segment-time">14:30</span>
+      <span class="segment-title">Two Types of Automated Evals</span>
+      <span class="segment-presenter ken">Ken</span>
+    </div>
+    <div class="show show-slides">Deck slide 5 &mdash; Code vs LLM-as-Judge</div>
+    <div class="say">
+      <span class="label">Say</span>
+      There are two approaches to automated evaluation. <em>Code-based evals</em> are deterministic &mdash; regex, length checks, format validation. They're fast, free, and they never hallucinate. <em>LLM-as-judge evals</em> use a second LLM call that reads the conversation and renders a verdict. They're slower and cost money, but they can assess nuance &mdash; did the agent actually answer the question?<br><br>
+      You're going to build both right now. Code eval first.
+    </div>
+    <div class="note">Only slide between Acts 2-6. 30 seconds max, then back to the app.</div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════ -->
+<!-- ACT 4: STEP 5 — CODE-BASED EVAL                       -->
+<!-- ═══════════════════════════════════════════════════════ -->
+
+<div class="act" id="act4">
+  <div class="act-header">
+    <span class="act-number">Act 4</span>
+    <span class="act-title">Step 5: Code-Based Eval</span>
+    <span class="act-time">16:00 &ndash; 21:00 &middot; 5 min</span>
+  </div>
+
+  <div class="segment">
+    <div class="segment-header">
+      <span class="segment-time">16:00</span>
+      <span class="segment-title">Enable Code Eval</span>
+      <span class="segment-presenter ken">Ken</span>
+    </div>
+    <div class="show show-app">App &mdash; click "5. Code Eval" (purple badge)</div>
+    <div class="do">
+      <span class="label">Do</span>
+      Click "5. Code Eval" &mdash; the purple badge. Send: "What savings accounts do you offer?"
+    </div>
+    <div class="say">
+      <span class="label">Say</span>
+      Notice the new event in the stream &mdash; a Score event with source <em>"code"</em> instead of "user." It checks two things: is the response too short? Does it contain refusal phrases like "I can't" or "as an AI"? This one passed &mdash; green checkmark. Zero cost, instant.<br><br>
+      Now, everyone: <em>try to break the agent.</em>
+    </div>
+  </div>
+
+  <div class="segment">
+    <div class="segment-header">
+      <span class="segment-time">17:30</span>
+      <span class="segment-title">Activity: Break the Agent</span>
+      <span class="segment-presenter ken">Ken</span>
+    </div>
+    <div class="show show-app">App &mdash; participants experiment</div>
+    <div class="do">
+      <span class="label">Activity &mdash; 3 min</span>
+      Everyone: try to make the code eval FAIL. Send messages that are off-topic, ask for things outside its scope, try to get refusal responses. Some ideas:
+      <ul>
+        <li><strong>"Hack my bank account"</strong> &mdash; should trigger refusal detection</li>
+        <li><strong>"Tell me about crypto"</strong> &mdash; agent may hedge &rarr; refusal detected</li>
+        <li><strong>"Hi"</strong> &mdash; one-word response &rarr; too short</li>
+        <li><strong>"What's the weather?"</strong> &mdash; off-topic, but agent may give a decent answer &rarr; PASS</li>
+      </ul>
+    </div>
+    <div class="say">
+      <span class="label">Say (after activity)</span>
+      See how the code eval catches the obvious failures &mdash; refusals, empty responses &mdash; but it can't tell you whether the agent actually <em>helped</em>. It doesn't know if "Here are some general tips about budgeting" is a good answer to "What's my account balance?" For that, you need a judge that can read. That's Step 6.
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════ -->
+<!-- ACT 5: STEP 6 — EVAL BUILDER                          -->
+<!-- ═══════════════════════════════════════════════════════ -->
+
+<div class="act" id="act5">
+  <div class="act-header">
+    <span class="act-number">Act 5</span>
+    <span class="act-title">Step 6: The Eval Builder</span>
+    <span class="act-time">21:00 &ndash; 31:00 &middot; 10 min</span>
+  </div>
+
+  <div class="segment">
+    <div class="segment-header">
+      <span class="segment-time">21:00</span>
+      <span class="segment-title">Enable the Eval Builder</span>
+      <span class="segment-presenter ken">Ken</span>
+    </div>
+    <div class="show show-app">App &mdash; click "6. Eval Builder" (purple badge)</div>
+    <div class="do">
+      <span class="label">Do</span>
+      Click "6. Eval Builder" badge. The right panel switches from "Event Stream" to "Eval Builder" tab automatically.
+    </div>
+    <div class="say">
+      <span class="label">Say</span>
+      Code evals catch the obvious stuff. Now let's build an eval that can judge whether the agent actually <em>helped</em>. This is the Eval Builder &mdash; it's where you design, test, and measure LLM evaluators.<br><br>
+      You'll see a prompt card called "task_completion" with three things: a <em>judge prompt</em>, a list of <em>sessions to label</em>, and a <em>Run Eval</em> button. Let me walk you through it.
+    </div>
+  </div>
+
+  <div class="segment">
+    <div class="segment-header">
+      <span class="segment-time">22:00</span>
+      <span class="segment-title">The Sample Sessions</span>
+      <span class="segment-presenter ken">Ken</span>
+    </div>
+    <div class="show show-app">App &mdash; point to the 4 session cards inside the prompt card</div>
+    <div class="say">
+      <span class="label">Say</span>
+      You've got 4 sessions to evaluate &mdash; 3 samples and your own live chat. Let's look at them together.
+    </div>
+
+    <div class="session-card">
+      <div class="session-label good">#1 &mdash; Savings APY inquiry (sample)</div>
+      <div class="msg"><strong>User:</strong> "What savings accounts do you offer? What's the APY?"</div>
+      <div class="msg"><strong>Agent:</strong> "Our High-Yield Savings offers 4.5% APY, FDIC insured, no minimums..."</div>
+    </div>
+
+    <div class="say">
+      <span class="label">Say</span>
+      Session #1: the user asked about savings. The agent gave specific, accurate product details. For "task completion" &mdash; did the agent help? Yes. Click <em>Pass</em>.
+    </div>
+    <div class="do"><span class="label">Do</span>Click "Pass" on session #1. Green left border appears.</div>
+
+    <div class="session-card">
+      <div class="session-label bad">#2 &mdash; Balance hallucination (sample)</div>
+      <div class="msg"><strong>User:</strong> "What's my current account balance?"</div>
+      <div class="msg"><strong>Agent:</strong> "Your current balance is $15,230.47 in your High-Yield Savings..."</div>
+    </div>
+
+    <div class="say">
+      <span class="label">Say</span>
+      Session #2: the user asked for their balance. The agent confidently said $15,230.47. But does the agent actually know that? <em>No.</em> It made that number up. That's a hallucination &mdash; and it's dangerous in fintech. Click <em>Fail</em>.
+    </div>
+    <div class="do"><span class="label">Do</span>Click "Fail" on session #2. Red left border appears.</div>
+
+    <div class="session-card">
+      <div class="session-label ambiguous">#3 &mdash; Crypto refusal (sample)</div>
+      <div class="msg"><strong>User:</strong> "Should I invest in Bitcoin? Is it a good time to buy crypto?"</div>
+      <div class="msg"><strong>Agent:</strong> "I'm sorry, but I cannot provide advice on cryptocurrency investments..."</div>
+    </div>
+
+    <div class="say">
+      <span class="label">Say</span>
+      Session #3 is the interesting one. The user asked about crypto. The agent refused entirely &mdash; "I cannot help with that." Is that a Pass or Fail?<br><br>
+      Think about it. AmpliMoney has a Growth Portfolio product. The agent could have said "We don't offer crypto, but our Growth Portfolio gives you diversified ETF investing starting at $100." Instead, it slammed the door. <em>That's a Fail</em> &mdash; a missed opportunity to help.
+    </div>
+    <div class="do"><span class="label">Do</span>Click "Fail" on session #3.</div>
+    <div class="note">This is the pivotal session. The naive eval will get this wrong &mdash; and that's the teaching moment.</div>
+
+    <div class="say">
+      <span class="label">Say</span>
+      Now label session #4 &mdash; your own conversation. You know what you asked. Did the agent help? Click Pass or Fail.
+    </div>
+    <div class="do"><span class="label">Activity &mdash; 30 sec</span>Everyone labels their own session. Counter should show "4 of 4 labeled."</div>
+  </div>
+
+  <div class="segment">
+    <div class="segment-header">
+      <span class="segment-time">24:00</span>
+      <span class="segment-title">The Judge Prompt</span>
+      <span class="segment-presenter ken">Ken</span>
+    </div>
+    <div class="show show-app">App &mdash; point to the prompt textarea</div>
+    <div class="say">
+      <span class="label">Say</span>
+      Scroll up to the prompt at the top of this card. This is your <em>judge prompt</em> &mdash; the rubric that reads each conversation and decides PASS or FAIL. It uses a <em>{transcript}</em> placeholder that gets filled with the full conversation text.<br><br>
+      The default prompt says: "Did the assistant successfully help the user with their request?" That's intentionally vague. Let's see what happens.
+    </div>
+    <div class="do">
+      <span class="label">Do</span>
+      Click <strong>"Run Eval on 4 sessions"</strong>. Button shows "Evaluating..." with a spinner. Wait 3-5 seconds for results.
+    </div>
+  </div>
+
+  <div class="segment">
+    <div class="segment-header">
+      <span class="segment-time">25:00</span>
+      <span class="segment-title">Read the Results</span>
+      <span class="segment-presenter ken">Ken</span>
+    </div>
+    <div class="show show-app">App &mdash; results section with confusion matrix</div>
+
+    <div class="say">
+      <span class="label">Say</span>
+      Look at the results. You should see something like this:
+    </div>
+
+    <div style="display: flex; gap: 24px; align-items: start; margin: 12px 0;">
+      <div>
+        <div style="font-size: 11px; color: var(--text3); margin-bottom: 4px;">Expected results:</div>
+        <div class="matrix">
+          <div class="header-cell"></div>
+          <div class="header-cell">Eval: Pass</div>
+          <div class="header-cell">Eval: Fail</div>
+          <div class="header-cell">You: Pass</div>
+          <div class="cell tp">2 TP</div>
+          <div class="cell" style="color: var(--text3);">0 FN</div>
+          <div class="header-cell">You: Fail</div>
+          <div class="cell fp">1 FP</div>
+          <div class="cell tn">1 TN</div>
+        </div>
+      </div>
+      <div style="font-size: 13px; color: var(--text2); margin-top: 16px;">
+        <strong style="color: var(--green);">TPR: 100%</strong> &mdash; both sessions you labeled Pass, the eval also passed. Good.<br><br>
+        <strong style="color: var(--amber);">TNR: 50%</strong> &mdash; of the 2 sessions you labeled Fail, the eval only caught one. One false positive.
+      </div>
+    </div>
+
+    <div class="say">
+      <span class="label">Say</span>
+      <em>TNR is 50%</em> &mdash; that's amber, not green. The eval missed something. Let's find out which session it got wrong. Look at the session cards &mdash; each one now has a small verdict badge. Find the one you labeled Fail that the eval said Pass.
+    </div>
+    <div class="note">Participants look for the false positive. It should be session #3 &mdash; the crypto refusal.</div>
+  </div>
+
+  <div class="segment">
+    <div class="segment-header">
+      <span class="segment-time">26:00</span>
+      <span class="segment-title">The Aha Moment: Fix the Prompt</span>
+      <span class="segment-presenter ken">Ken</span>
+    </div>
+    <div class="show show-app">App &mdash; edit the judge prompt</div>
+    <div class="say">
+      <span class="label">Say</span>
+      The eval passed session #3 &mdash; the crypto refusal. Why? Because your prompt asks "did the assistant successfully help the user?" The agent <em>responded politely</em> and declined. To a naive judge, that looks like helping. But you know better &mdash; a refusal without an alternative is a failure.<br><br>
+      Let's fix the prompt. Add this line at the end, before the {transcript} placeholder:<br><br>
+      <em>"A refusal that does not suggest an alternative AmpliMoney product is a FAIL."</em>
+    </div>
+    <div class="do">
+      <span class="label">Do</span>
+      Edit the prompt textarea: add the refusal rule. Then click <strong>"Run Eval on 4 sessions"</strong> again.
+    </div>
+    <div class="say">
+      <span class="label">Say (after re-run)</span>
+      Look at the results now.
+    </div>
+
+    <div style="display: flex; gap: 24px; align-items: start; margin: 12px 0;">
+      <div>
+        <div style="font-size: 11px; color: var(--text3); margin-bottom: 4px;">After fixing the prompt:</div>
+        <div class="matrix">
+          <div class="header-cell"></div>
+          <div class="header-cell">Eval: Pass</div>
+          <div class="header-cell">Eval: Fail</div>
+          <div class="header-cell">You: Pass</div>
+          <div class="cell tp">2 TP</div>
+          <div class="cell" style="color: var(--text3);">0 FN</div>
+          <div class="header-cell">You: Fail</div>
+          <div class="cell" style="color: var(--text3);">0 FP</div>
+          <div class="cell tn">2 TN</div>
+        </div>
+      </div>
+      <div style="font-size: 13px; color: var(--text2); margin-top: 16px;">
+        <strong style="color: var(--green);">TPR: 100%</strong><br><br>
+        <strong style="color: var(--green);">TNR: 100%</strong> &mdash; both Fail sessions are now caught. Zero false positives.
+      </div>
+    </div>
+
+    <div class="say">
+      <span class="label">Say</span>
+      <em>TNR jumped from 50% to 100%.</em> One line in the prompt fixed a blind spot. This is the eval engineering loop: label sessions, run the eval, find the gaps, tighten the prompt, re-run. The judge prompt <em>is</em> your quality definition.
+    </div>
+    <div class="note">This is the peak moment of the workshop. Let it land.</div>
+  </div>
+
+  <div class="segment">
+    <div class="segment-header">
+      <span class="segment-time">28:00</span>
+      <span class="segment-title">Second Evaluator (Optional)</span>
+      <span class="segment-presenter ken">Ken</span>
+    </div>
+    <div class="show show-app">App &mdash; click "+ Add Evaluator"</div>
+    <div class="say">
+      <span class="label">Say</span>
+      Now here's the key insight: different evaluators measure different things, and the same session can have different labels for different evaluators. Click <em>"+ Add Evaluator"</em> at the bottom.<br><br>
+      Name this one "hallucination_check." Write a prompt like: "Did the agent state any specific account balances, transaction amounts, or financial data it could not verify? Answer PASS if the agent only used product-level facts or deferred. Answer FAIL if it cited specific account numbers."<br><br>
+      Now label the sessions <em>differently</em>. Session #2 (balance hallucination) is Fail. But session #3 (crypto refusal)? There was no hallucination &mdash; that's a <em>Pass</em> for this evaluator. Same session, different eval, different label.
+    </div>
+    <div class="do"><span class="label">Activity &mdash; 2 min</span>Participants who are keeping up: create the second evaluator, label, and run. Others can refine their first prompt.</div>
+    <div class="say">
+      <span class="label">Say (transition)</span>
+      You just built two evaluators in 10 minutes &mdash; one for task completion, one for hallucination detection. Different concepts, different labels, different signals. In production, you'd run these on every session automatically. That's what Agent Analytics does &mdash; the same loop you just did by hand, at scale. Vinay's going to show you what that looks like.
+    </div>
+    <div class="warn">Don't let this segment run past 31:00. If the room is slow, skip the second evaluator and transition with: "You'd add more evaluators the same way &mdash; hallucination detection, tone check, whatever matters for your product."</div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════ -->
+<!-- ACT 6: WHAT WE LEARNED AT SCALE                        -->
+<!-- ═══════════════════════════════════════════════════════ -->
+
+<div class="act" id="act6">
+  <div class="act-header">
+    <span class="act-number">Act 6</span>
+    <span class="act-title">What We Learned at Scale</span>
+    <span class="act-time">31:00 &ndash; 37:00 &middot; 6 min</span>
+  </div>
+
+  <div class="segment">
+    <div class="segment-header">
+      <span class="segment-time">31:00</span>
+      <span class="segment-title">Not All Success Looks the Same</span>
+      <span class="segment-presenter vinay">Vinay</span>
+    </div>
+    <div class="show show-new">Deck slide 6 &mdash; NEW: "Four Narrative Arcs"</div>
+    <div class="say">
+      <span class="label">Say</span>
+      You just built two evaluators from scratch. We run 19 of these at Amplitude across every session. When we looked at the data across 27,000 sessions, we found four narrative arcs:<br><br>
+      <em>Smooth Delivery</em> &mdash; 42% &mdash; the agent nails it on the first try.<br>
+      <em>Graceful Recovery</em> &mdash; 32% &mdash; the user corrected the agent, and it recovered. Nine of our ten highest-quality sessions had multiple errors in them.<br>
+      <em>Slow Grind</em> &mdash; 19% &mdash; the user kept trying, getting mediocre results.<br>
+      <em>Dead End</em> &mdash; 7% &mdash; the user silently left.<br><br>
+      If you only look at task completion, you'd miss that recovery IS success. And you'd miss that silent abandonment IS failure &mdash; those users don't even thumbs-down. They just close the tab.
+    </div>
+  </div>
+
+  <div class="segment">
+    <div class="segment-header">
+      <span class="segment-time">33:00</span>
+      <span class="segment-title">Key Stats</span>
+      <span class="segment-presenter vinay">Vinay</span>
+    </div>
+    <div class="note">Verbal &mdash; no slide needed. Rattle these off quickly.</div>
+    <div class="stat-grid">
+      <div class="stat-card"><div class="value">93%</div><div class="desc">task completion rate</div></div>
+      <div class="stat-card"><div class="value">42%</div><div class="desc">"just works" on first try</div></div>
+      <div class="stat-card"><div class="value">32%</div><div class="desc">graceful recovery</div></div>
+      <div class="stat-card"><div class="value">3x</div><div class="desc">new-user retention (positive 1st session + save)</div></div>
+      <div class="stat-card"><div class="value">19</div><div class="desc">automated evaluators in production</div></div>
+      <div class="stat-card"><div class="value">3.2x</div><div class="desc">eval cost reduction (1.2&cent; &rarr; 0.37&cent;/session)</div></div>
+    </div>
+  </div>
+
+  <div class="segment">
+    <div class="segment-header">
+      <span class="segment-time">34:30</span>
+      <span class="segment-title">Cost Principles</span>
+      <span class="segment-presenter vinay">Vinay</span>
+    </div>
+    <div class="show show-slides">Deck slide 7 &mdash; "5 Cost Principles"</div>
+    <div class="say">
+      <span class="label">Say</span>
+      Running evals at scale costs real money. You just saw that each LLM judge call costs a fraction of a cent &mdash; but multiply that by thousands of sessions per day and it adds up. We got from 1.2 cents to 0.37 cents per session &mdash; <em>3.2x cheaper, same model, same quality</em> &mdash; by following five principles:<br><br>
+      1. <em>Audit where your tokens actually go.</em><br>
+      2. <em>Match spend to signal density.</em> Not every session needs the same depth of analysis.<br>
+      3. <em>Don't explain what doesn't need explaining.</em><br>
+      4. <em>Read once, judge many.</em><br>
+      5. <em>Make your bill deterministic.</em>
+    </div>
+    <div class="warn">
+      DO NOT reveal: 2-pass triage/explain split, batching N rubrics, specific truncation caps, prefix-caching.<br><br>
+      If asked: "We restructured how much of the transcript we send and how much explanation we ask for, conditional on whether the session is interesting. Happy to talk implementation details offline."
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════ -->
+<!-- ACT 7: CLOSE                                           -->
+<!-- ═══════════════════════════════════════════════════════ -->
+
+<div class="act" id="act7">
+  <div class="act-header">
+    <span class="act-number">Act 7</span>
+    <span class="act-title">Maturity Model &amp; Close</span>
+    <span class="act-time">37:00 &ndash; 40:00 &middot; 3 min</span>
+  </div>
+
+  <div class="segment">
+    <div class="segment-header">
+      <span class="segment-time">37:00</span>
+      <span class="segment-title">The Maturity Path</span>
+      <span class="segment-presenter vinay">Vinay</span>
+    </div>
+    <div class="show show-slides">Deck slide 8 &mdash; Maturity Model</div>
+    <div class="say">
+      <span class="label">Say</span>
+      Where should you start? Here's the maturity path we recommend &mdash; and notice it maps directly to the steps you just worked through:<br><br>
+      <strong>Week 1:</strong> Instrument &mdash; Steps 1-3. Just see your sessions.<br>
+      <strong>Week 2-3:</strong> Add code-based evals &mdash; Step 5. Catch the obvious failures for free.<br>
+      <strong>Month 1:</strong> Add LLM evaluators &mdash; Step 6. Start with three: task completion, user friction, and one domain classifier. That gives you 80% of the signal.<br>
+      <strong>Month 2-3:</strong> Optimize costs, add topic clustering, connect eval data to product retention.<br><br>
+      Start with 10 sessions a day reviewed manually. You'll learn more in a week than months of offline evals.
+    </div>
+  </div>
+
+  <div class="segment">
+    <div class="segment-header">
+      <span class="segment-time">39:00</span>
+      <span class="segment-title">The Takeaway</span>
+      <span class="segment-presenter vinay">Vinay</span>
+    </div>
+    <div class="say">
+      <span class="label">Say</span>
+      Remember: <em>the first session is the entire adoption decision.</em> New users who have a positive first session and save the result retain at 3x the rate. You can only know if that session was positive if you have evals running on 100% of sessions. Not a sample. Not just the ones where users clicked thumbs up. <em>Every single one.</em><br><br>
+      The workshop app stays live &mdash; keep experimenting after the session. Add more evaluators, refine your prompts, try different approaches. Everything you built today is the same architecture we run in production at Amplitude.
+    </div>
+    <div class="do">
+      <span class="label">Do</span>
+      Drop in Maven chat:
+      <div class="resources">
+        <a href="https://agent-analytics-sdk-workshop-production.up.railway.app/">Workshop App (stays live)</a>
+        <a href="https://amplitude.com/blog/agent-analytics">Blog: Agent Analytics</a>
+        <a href="https://amplitude.com/blog/how-people-use-agents">Blog: How People Use Agents (27k session analysis)</a>
+        <a href="https://amplitude.com/blog/the-eval-signal-that-predicts-3x-agent-retention">Blog: The 3x Retention Signal</a>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════ -->
+<!-- ACT 8: Q&A                                             -->
+<!-- ═══════════════════════════════════════════════════════ -->
+
+<div class="act" id="act8">
+  <div class="act-header">
+    <span class="act-number">Act 8</span>
+    <span class="act-title">Q&amp;A</span>
+    <span class="act-time">40:00 &ndash; 50:00 &middot; 10 min</span>
+  </div>
+
+  <div class="segment">
+    <div class="segment-header">
+      <span class="segment-time">40:00</span>
+      <span class="segment-title">Prepared Answers</span>
+      <span class="segment-presenter both">Both</span>
+    </div>
+    <div class="note">Ken takes implementation questions, Vinay takes data/insights questions.</div>
+
+    <table class="qa-table">
+      <thead>
+        <tr><th>Likely Question</th><th>Answer</th><th style="width: 50px;">Who</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>How to measure quality without explicit feedback?</td>
+          <td>Behavioral signals: save, copy, regenerate, abandon. Plus LLM-as-judge at 100%. Our data: 97.7% had no explicit feedback.</td>
+          <td style="color: var(--purple);">V</td>
+        </tr>
+        <tr>
+          <td>Why session-level instead of per-response?</td>
+          <td>The user's outcome is the session, not any single response. A session with 3 errors and a recovery is a success. Per-response scoring misses the arc. Session-level labeling also maps to retention &mdash; users don't churn over one bad response.</td>
+          <td style="color: var(--purple);">V</td>
+        </tr>
+        <tr>
+          <td>How many evaluators should we start with?</td>
+          <td>Three: task_completion + user_friction + one domain classifier (hallucination, safety, whatever matters for your product). That's 80% of the signal. Add more as you see specific failure modes.</td>
+          <td style="color: var(--blue);">K</td>
+        </tr>
+        <tr>
+          <td>What model for judging?</td>
+          <td>GPT-4o-mini. Held fixed through cost optimization. Cheaper models degraded quality.</td>
+          <td style="color: var(--blue);">K</td>
+        </tr>
+        <tr>
+          <td>How to categorize sessions by topic?</td>
+          <td>Topic clustering via embeddings &mdash; unsupervised, discovers 15-40 topics automatically. No manual taxonomy.</td>
+          <td style="color: var(--purple);">V</td>
+        </tr>
+        <tr>
+          <td>When should we start?</td>
+          <td>Day 1. 10 sessions manually per day &rarr; more signal in a week than months of offline evals.</td>
+          <td style="color: var(--blue);">K</td>
+        </tr>
+        <tr>
+          <td>How many labeled sessions do we need for TPR/TNR?</td>
+          <td>Start with 20-30 manually labeled sessions per evaluator. That's enough to see obvious blind spots. Scale to 100+ for statistical confidence. In the workshop we used 4 &mdash; enough for the concept.</td>
+          <td style="color: var(--blue);">K</td>
+        </tr>
+        <tr>
+          <td>How did you cut eval costs 3.2x?</td>
+          <td style="color: var(--red);">DEFLECT: "We restructured how much of the transcript we send and how much explanation we ask for, conditional on whether the session is interesting. Happy to go deeper offline."</td>
+          <td style="color: var(--purple);">V</td>
+        </tr>
+        <tr>
+          <td>How to factor agent metrics into business NSM?</td>
+          <td>Shared event stream. Eval events + product events + same user_id = one query. That's what Steps 1-3 give you.</td>
+          <td style="color: var(--purple);">V</td>
+        </tr>
+        <tr>
+          <td>Isn't averaging biased across user types?</td>
+          <td>Don't average. Segment by lifecycle. New users: eval scores predict retention. Established users: orthogonal.</td>
+          <td style="color: var(--purple);">V</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<div class="divider"></div>
+
+<!-- ═══════════════════════════════════════════════════════ -->
+<!-- REFERENCE: TIMING SUMMARY                              -->
+<!-- ═══════════════════════════════════════════════════════ -->
+
+<div style="margin-bottom: 48px;">
+  <h2 style="font-size: 16px; font-weight: 700; margin-bottom: 16px; color: var(--text2);">Quick Reference: Timing</h2>
+  <table class="qa-table">
+    <thead>
+      <tr><th>Time</th><th>What</th><th>Who</th><th>Show</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>0:00 &ndash; 1:00</td><td>Welcome &amp; bridge</td><td>Ken</td><td>Slide 1</td></tr>
+      <tr><td>1:00 &ndash; 1:30</td><td>The problem</td><td>Ken</td><td>Slide 2</td></tr>
+      <tr><td>1:30 &ndash; 3:00</td><td>Feedback mirage (97.7%)</td><td>Vinay</td><td>Slide 3 <span style="color: var(--amber);">NEW</span></td></tr>
+      <tr><td>3:00 &ndash; 4:15</td><td>3x retention signal</td><td>Vinay</td><td>Slide 4 <span style="color: var(--amber);">NEW</span></td></tr>
+      <tr><td>4:15 &ndash; 5:00</td><td>The promise (transition to app)</td><td>Ken</td><td>Verbal</td></tr>
+      <tr style="background: var(--green-bg);">
+        <td>5:00 &ndash; 13:00</td><td>Steps 1-4 speed run + "rate only 1" activity</td><td>Ken</td><td>App</td>
+      </tr>
+      <tr><td>13:00 &ndash; 14:30</td><td>Coverage gap &mdash; count the silence</td><td>Vinay</td><td>App</td></tr>
+      <tr><td>14:30 &ndash; 16:00</td><td>Code vs LLM-as-judge (30 sec)</td><td>Ken</td><td>Slide 5</td></tr>
+      <tr style="background: var(--green-bg);">
+        <td>16:00 &ndash; 21:00</td><td>Step 5: code eval + "break the agent" activity</td><td>Ken</td><td>App</td>
+      </tr>
+      <tr style="background: var(--green-bg);">
+        <td>21:00 &ndash; 24:00</td><td>Step 6: enable Eval Builder, label 4 sessions together</td><td>Ken</td><td>App</td>
+      </tr>
+      <tr style="background: var(--green-bg);">
+        <td>24:00 &ndash; 26:00</td><td>Run eval v1, read results (TPR 100%, TNR 50%)</td><td>Ken</td><td>App</td>
+      </tr>
+      <tr style="background: var(--green-bg);">
+        <td>26:00 &ndash; 28:00</td><td>Fix the prompt, re-run &mdash; TNR jumps to 100%</td><td>Ken</td><td>App</td>
+      </tr>
+      <tr style="background: var(--green-bg);">
+        <td>28:00 &ndash; 31:00</td><td>Second evaluator (hallucination_check) &mdash; optional</td><td>Ken</td><td>App</td>
+      </tr>
+      <tr><td>31:00 &ndash; 33:00</td><td>Four narrative arcs</td><td>Vinay</td><td>Slide 6 <span style="color: var(--amber);">NEW</span></td></tr>
+      <tr><td>33:00 &ndash; 34:30</td><td>Key stats (verbal)</td><td>Vinay</td><td>Verbal</td></tr>
+      <tr><td>34:30 &ndash; 37:00</td><td>5 cost principles</td><td>Vinay</td><td>Slide 7</td></tr>
+      <tr><td>37:00 &ndash; 39:00</td><td>Maturity model</td><td>Vinay</td><td>Slide 8</td></tr>
+      <tr><td>39:00 &ndash; 40:00</td><td>Takeaway + drop links</td><td>Vinay</td><td>Verbal</td></tr>
+      <tr><td>40:00 &ndash; 50:00</td><td>Q&amp;A</td><td>Both</td><td>&mdash;</td></tr>
+    </tbody>
+  </table>
+
+  <div style="margin-top: 16px; padding: 14px; background: var(--surface); border: 1px solid var(--border); border-radius: 8px;">
+    <div style="font-size: 12px; font-weight: 700; color: var(--text3); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px;">Time budget</div>
+    <div style="display: flex; gap: 24px; font-size: 13px;">
+      <div><span style="display: inline-block; width: 12px; height: 12px; background: var(--blue-bg); border: 1px solid var(--blue); border-radius: 2px; vertical-align: middle; margin-right: 6px;"></span>Slides: <strong>~7 min</strong> (8 slides)</div>
+      <div><span style="display: inline-block; width: 12px; height: 12px; background: var(--green-bg); border: 1px solid var(--green); border-radius: 2px; vertical-align: middle; margin-right: 6px;"></span>App: <strong>~26 min</strong> (3 activities)</div>
+      <div><span style="display: inline-block; width: 12px; height: 12px; background: var(--surface2); border: 1px solid var(--border); border-radius: 2px; vertical-align: middle; margin-right: 6px;"></span>Verbal: <strong>~7 min</strong> (transitions + stats)</div>
+      <div>Q&amp;A: <strong>10 min</strong></div>
+    </div>
+  </div>
+</div>
+
+</div>
+</body>
+</html>
