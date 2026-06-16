@@ -1,4 +1,4 @@
-import { StepConfig, ChatMessage, ChatResponse, CapturedEvent } from '../types';
+import { StepConfig, ChatMessage, ChatResponse, CapturedEvent, EvalBatchResponse } from '../types';
 
 const API_BASE = import.meta.env.VITE_API_URL || '';
 
@@ -8,7 +8,6 @@ export async function sendChat(
   config: StepConfig,
   sessionId: string | null,
   amplitudeApiKey: string | null,
-  judgePrompt: string | null = null,
 ): Promise<ChatResponse> {
   const res = await fetch(`${API_BASE}/api/chat`, {
     method: 'POST',
@@ -19,12 +18,29 @@ export async function sendChat(
       config,
       session_id: sessionId,
       amplitude_api_key: amplitudeApiKey,
-      judge_prompt: judgePrompt,
     }),
   });
 
   if (!res.ok) {
     const err = await res.json().catch(() => ({ detail: 'Request failed' }));
+    throw new Error(err.detail || `HTTP ${res.status}`);
+  }
+
+  return res.json();
+}
+
+export async function runEvalBatch(
+  prompt: string,
+  sessions: { messages: { role: string; content: string }[] }[],
+): Promise<EvalBatchResponse> {
+  const res = await fetch(`${API_BASE}/api/eval/batch`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ prompt, sessions }),
+  });
+
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({ detail: 'Eval request failed' }));
     throw new Error(err.detail || `HTTP ${res.status}`);
   }
 

@@ -26,3 +26,24 @@ export interface ChatResponse {
   session_id: string | null;
   message_id: string | null;
 }
+
+// Eval Builder types
+
+export interface EvalResult {
+  passed: boolean;
+  rationale: string;
+}
+
+export interface EvalBatchResponse {
+  results: EvalResult[];
+}
+
+export interface EvalPromptState {
+  id: string;
+  name: string;
+  prompt: string;
+  labels: Record<string, 'pass' | 'fail'>;
+  results: EvalResult[] | null;
+  running: boolean;
+  error: string | null;
+}

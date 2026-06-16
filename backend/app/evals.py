@@ -75,3 +75,31 @@ def run_llm_eval(
         return {"passed": passed, "rationale": verdict_text.strip()}
     except Exception as e:
         return {"passed": True, "rationale": f"Judge error: {e}"}
+
+
+def run_session_eval(messages: list[dict], judge_prompt: str) -> dict:
+    """Evaluate a full session transcript with an LLM judge.
+
+    The judge_prompt should contain a {transcript} placeholder that gets
+    filled with the formatted conversation.
+    Returns {"passed": bool, "rationale": str}.
+    """
+    transcript = "\n".join(
+        f"{'User' if m.get('role') == 'user' else 'Assistant'}: {m.get('content', '')}"
+        for m in messages
+    )
+    prompt = judge_prompt.replace("{transcript}", transcript)
+
+    try:
+        client = _get_judge_client()
+        response = client.chat.completions.create(
+            model="gpt-4o-mini",
+            messages=[{"role": "user", "content": prompt}],
+            max_tokens=150,
+            temperature=0,
+        )
+        verdict_text = response.choices[0].message.content or ""
+        passed = "PASS" in verdict_text.upper() and "FAIL" not in verdict_text.upper()
+        return {"passed": passed, "rationale": verdict_text.strip()}
+    except Exception as e:
+        return {"passed": False, "rationale": f"Judge error: {e}"}

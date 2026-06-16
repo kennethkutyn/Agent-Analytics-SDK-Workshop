@@ -20,7 +20,7 @@ from .event_capture import (
     build_score_event,
     build_eval_event,
 )
-from .evals import run_code_eval, run_llm_eval
+from .evals import run_code_eval
 
 # Plain OpenAI client (no tracking) used when step_1 is off
 plain_client = OpenAI(api_key=OPENAI_API_KEY)
@@ -148,20 +148,6 @@ def handle_chat(request: ChatRequest) -> ChatResponse:
                 eval_type="code",
                 passed=result["passed"],
                 reason=result["reason"],
-                target_id=ai_msg_id,
-                user_id=user_id,
-                session_id=session_id if config.step_3_sessions else None,
-            )
-        )
-
-    # Step 6: LLM-as-Judge eval
-    if config.step_6_llm_judge and config.step_1_ai_sdk:
-        result = run_llm_eval(ai_content, request.message, request.judge_prompt)
-        events.append(
-            build_eval_event(
-                eval_type="llm_judge",
-                passed=result["passed"],
-                reason=result.get("rationale", ""),
                 target_id=ai_msg_id,
                 user_id=user_id,
                 session_id=session_id if config.step_3_sessions else None,

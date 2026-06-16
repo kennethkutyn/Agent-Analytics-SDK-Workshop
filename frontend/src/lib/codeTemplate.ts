@@ -89,22 +89,24 @@ def handle_message(user_message):
 # ----------------------------------------------
 
 
-# ------ STEP 6: Add LLM-as-Judge eval ------
-# Live LLM call to judge response quality:
+# ------ STEP 6: Eval Builder ------
+# Session-level LLM-as-Judge evaluation:
 #
 # judge_prompt = (
-#     "Did the agent complete the user's request? "
-#     "User asked: {user_message} "
-#     "Agent responded: {ai_response} "
-#     "Answer PASS or FAIL and explain in one sentence."
+#     "Read this conversation and decide: did the assistant "
+#     "successfully help the user? Answer PASS or FAIL "
+#     "and explain in one sentence."
+#     "\\nConversation:\\n{transcript}"
 # )
-# verdict = openai.chat.completions.create(
-#     model="gpt-4o-mini",
-#     messages=[{"role": "user", "content": judge_prompt}],
-# )
-# score(name="eval_llm", value=1.0 if "PASS" in verdict else 0.0, source="llm_judge")
+# for session in sessions:
+#     verdict = openai.chat.completions.create(
+#         model="gpt-4o-mini",
+#         messages=[{"role": "user", "content": judge_prompt}],
+#     )
+#     label = "PASS" if human_says_good else "FAIL"
+#     # Compare verdict vs label -> TPR / TNR
 #
-# Edit the prompt below to improve accuracy!
-# Uses ~100 tokens per eval (~$0.0001)
+# Label sessions, write prompts, iterate!
+# Open the Eval Builder tab to try it live.
 # ----------------------------------------------
 `;

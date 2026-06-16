@@ -41,7 +41,7 @@ function isBlockUncommented(code: string, stepMarker: string): boolean {
     // Skip empty lines and description-only comment lines
     if (trimmed === '' || trimmed === '#') return false;
     // Skip lines that are clearly descriptions (start with "# " followed by text that isn't code)
-    if (trimmed.match(/^#\s+(Uncomment|That's|Now|Build|measure|Links|Every|session|Deterministic|Edit|Runs|Compare|Free|Live|Uses)/i))
+    if (trimmed.match(/^#\s+(Uncomment|That's|Now|Build|measure|Links|Every|session|Deterministic|Edit|Runs|Compare|Free|Live|Uses|Session|Label|Open)/i))
       return false;
     return true;
   });

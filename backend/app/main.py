@@ -4,8 +4,12 @@ from fastapi.staticfiles import StaticFiles
 import os
 
 from .config import ALLOWED_ORIGINS, OPENAI_API_KEY
-from .models import ChatRequest, ChatResponse, ScoreRequest, CapturedEvent
+from .models import (
+    ChatRequest, ChatResponse, ScoreRequest, CapturedEvent,
+    EvalBatchRequest, EvalBatchResponse, EvalResult,
+)
 from .chat import handle_chat, handle_score
+from .evals import run_session_eval
 
 app = FastAPI(title="AmpliMoney SDK Playground")
 
@@ -36,6 +40,18 @@ def chat(request: ChatRequest):
 @app.post("/api/score")
 def score(request: ScoreRequest) -> list[CapturedEvent]:
     return handle_score(request)
+
+
+@app.post("/api/eval/batch", response_model=EvalBatchResponse)
+def eval_batch(request: EvalBatchRequest):
+    if not OPENAI_API_KEY:
+        raise HTTPException(status_code=500, detail="OpenAI API key not configured")
+    results = []
+    for session in request.sessions:
+        msgs = [{"role": m.role, "content": m.content} for m in session.messages]
+        result = run_session_eval(msgs, request.prompt)
+        results.append(EvalResult(**result))
+    return EvalBatchResponse(results=results)
 
 
 # Serve frontend static files in production

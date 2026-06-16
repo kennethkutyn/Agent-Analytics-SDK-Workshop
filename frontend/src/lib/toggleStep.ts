@@ -29,7 +29,7 @@ export function toggleStepBlock(code: string, stepNum: number): string {
     const trimmed = line.trim();
     if (trimmed === '' || trimmed === '#') return;
     // Skip description lines
-    if (trimmed.match(/^#\s+(Uncomment|That's|Now|Build|measure|Links|Every|Session|Deterministic|Edit|Runs|Compare|Free|Live|Uses|-\s*\[)/i)) return;
+    if (trimmed.match(/^#\s+(Uncomment|That's|Now|Build|measure|Links|Every|Session|Deterministic|Edit|Runs|Compare|Free|Live|Uses|Label|Open|-\s*\[)/i)) return;
     codeLineIndices.push(startIdx + 1 + offset);
   });
 
